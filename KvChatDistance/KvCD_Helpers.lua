@@ -78,12 +78,12 @@ end
 function KvChatDistance.TableMergeNoOverwrite(from, to)
     for key, value in pairs(from) do
         if type(value) == "table" then
-            if not to[key] then
+            if to[key] == nil then
                 to[key] = {}
                 KvChatDistance.TableMergeNoOverwrite(from[key], to[key])
             end
         else
-            if not to[key] then to[key] = value end
+            if to[key] == nil then to[key] = value end
         end
     end
 end
