@@ -72,7 +72,7 @@ function KvChatDistance.RGBToHex(r, g, b, a)
     r = r <= 255 and r >= 0 and r or 0
     g = g <= 255 and g >= 0 and g or 0
     b = b <= 255 and b >= 0 and b or 0
-    if KLib.is.Num(a) and a >= 0 then
+    if type(a) == "number" and a >= 0 then
         a = a <= 255 and a >= 0 and a or 0
         return string.format("%02x%02x%02x%02x", a, r, g, b)
     else
@@ -81,14 +81,23 @@ function KvChatDistance.RGBToHex(r, g, b, a)
 end
 
 -- --------------------------------------------------------------------------------------------------------------------
+-- Round num to match the number of decimal places of numMatch
+-- ----------------------------------------------------------------
+local function NumberClamp(num, lowerLimit, upperLimit)
+    if lowerLimit > upperLimit then lowerLimit, upperLimit = upperLimit, lowerLimit end -- Swap if limits supplied reversed
+    if num < lowerLimit then num = lowerLimit end
+    if num > upperLimit then num = upperLimit end
+    return num
+end
+-- --------------------------------------------------------------------------------------------------------------------
 -- RGBDecTo255
 -- Converts decimal RGBA values to fractions of 255
 -- --------------------------------
 function KvChatDistance.RGBDecTo255(r,g,b,a)
-    if r then r = KLib.num.Clamp(255 * r, 0, 255) end
-    if g then g = KLib.num.Clamp(255 * g, 0, 255) end
-    if b then b = KLib.num.Clamp(255 * b, 0, 255) end
-    if a then a = KLib.num.Clamp(255 * a, 0, 255) end
+    if r then r = NumberClamp(255 * r, 0, 255) end
+    if g then g = NumberClamp(255 * g, 0, 255) end
+    if b then b = NumberClamp(255 * b, 0, 255) end
+    if a then a = NumberClamp(255 * a, 0, 255) end
     return r,g,b,a
 end
 
