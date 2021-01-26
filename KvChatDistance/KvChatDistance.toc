@@ -1,12 +1,11 @@
 ## Interface: 90002
 ## Title: KvChatDistance
 ## Author: Kvalyr
-## Notes: Text effects by distance to source unit
-## Version: 0.1.0
+## Notes: Darken Chat Messages by Speaker Distance
+## Version: 0.1.1
 ## SavedVariables: KvChatDistance_SV
-## SavedVariablesPerCharacter: KvChatDistance_SVPC
-# X-Curse-Project-ID: 430981
-# X-WoWI-ID: 25846
+## X-Curse-Project-ID: 440158
+## X-WoWI-ID: 25882
 
 Libs\LibStub.lua
 Libs\LibRangeCheck-2.0.lua
