@@ -61,7 +61,7 @@ function KvChatDistance.IsUnitInPlayerGuild(unitID)
     C_GuildInfo.GuildRoster()
     local playerGuild = GetGuildInfo("player")
     local unitGuild = GetGuildInfo(unitID)
-    return playerGuild == unitGuild
+    return playerGuild ~= nil and playerGuild == unitGuild
 end
 
 -- --------------------------------------------------------------------------------------------------------------------
