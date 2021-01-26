@@ -31,9 +31,12 @@ i18n["highlightGroup_descextra"] = "They will not be affected by distance."
 i18n["unitSearchTargetDepth"] = "Target Search Depth"
 i18n["unitSearchTargetDepth_desc"] = "How many targets deep to search on checked units. Higher values reduce performance."
 -- i18n["unitSearchTargetDepth_descextra"] = "How many targets deep to search on checked units. Higher values reduce performance."
-i18n["useNameplateTrick"] = "Toggle Momentary Nameplate Scan"
+i18n["useNameplateTrick"] = "Momentary Nameplate Scan"
 i18n["useNameplateTrick_desc"] = "Momentarily enable all nameplates on an interval (set below) so that the addon can more accurately determine distances for non-group members."
 i18n["useNameplateTrick_descextra"] = "Warning: This experimental option may interfere with other addons that control nameplate visibility."
+i18n["hideNameplatesDuringTrick"] = "Hide Nameplates during scan"
+i18n["hideNameplatesDuringTrick_desc"] = "Hides the nameplates when they're being scanned."
+i18n["hideNameplatesDuringTrick_descextra"] = "This should reduce the visual impact of the nameplates being toggled on an interval."
 i18n["nameplateTickerInterval"] = "Nameplate Scan Interval"
 i18n["nameplateTickerInterval_desc"] = "Sets the interval at which nameplates are briefly enabled so that the addon can grab distance information for nearby players."
 i18n["nameplateTickerInterval_descextra"] = "Lower values may result in noticeable flickering."
@@ -188,10 +191,31 @@ local function NewOptionFrame(parent, frameName, initialWidth, widgetVerticalSpa
     return subFrame
 end
 
+local function NewHeader(parentFrame, headerText)
+    local frameName = parentFrame:GetName().."_Header"
+
+    -- local frame = CreateFrame("Frame", frameName, nil, BackdropTemplateMixin and "BackdropTemplate")
+    -- frame:SetSize(1,1)
+    -- frame:SetPoint("CENTER", 0, 0)
+
+    local frame = parentFrame
+    local fontString = frame:CreateFontString(frameName.."_FS", "OVERLAY", "GameFontNormalLarge")
+    fontString:SetPoint("CENTER", 0, 0)
+    fontString:SetText(headerText)
+
+    -- frame.fontString = fontString
+    -- frame:SetWidth(fontString:GetStringWidth())
+    -- frame:SetHeight(fontString:GetStringHeight())
+
+    return fontString
+    -- return frame
+end
+
 -- --------------------------------------------------------------------------------------------------------------------
 -- CreateOptionsMenu
 -- --------------------------------------------------------
 function KvChatDistance:CreateOptionsMenu()
+    local debugMode = KvChatDistance:GetSettings().debugMode
     local widgetVerticalSpacing = 8
     local widgetHorizontalSpacing = 16
     local subFrameWidth = 275
@@ -201,32 +225,39 @@ function KvChatDistance:CreateOptionsMenu()
     KvChatDistance.optionsFrame = optionsFrame
     KvChatDistance.optionsFrame.name = "Darken Chat Messages"
     InterfaceOptions_AddCategory(KvChatDistance.optionsFrame)
-    optionsFrame:SetBackdropColor(0.3, 0.3, 0.3, 0.5)
+    optionsFrame:SetBackdropColor(0.2, 0.2, 0.2, 0.65)
+    optionsFrame:SetScale(0.85)
 
     -- L
-    local optionsFrameL = NewOptionFrame(optionsFrame, optionsFrame:GetName().."_Left", 200, widgetVerticalSpacing*2, widgetHorizontalSpacing/2)
+    local optionsFrameL = NewOptionFrame(optionsFrame, optionsFrame:GetName().."_Left", 200, widgetVerticalSpacing, widgetHorizontalSpacing/2)
     optionsFrameL:SetPoint("TOPLEFT", optionsFrame, "TOPLEFT", widgetHorizontalSpacing, -widgetVerticalSpacing)
     optionsFrameL:SetPoint("BOTTOMRIGHT", optionsFrame, "BOTTOM", -widgetHorizontalSpacing, widgetVerticalSpacing)
+    -- -- M
+    -- local optionsFrameM = NewOptionFrame(optionsFrame, optionsFrame:GetName().."_Mid", 200, widgetVerticalSpacing*2, widgetHorizontalSpacing/2)
+    -- optionsFrameM:SetPoint("TOPLEFT", optionsFrame, "TOPLEFT", widgetHorizontalSpacing, -widgetVerticalSpacing)
+    -- optionsFrameM:SetPoint("BOTTOMRIGHT", optionsFrame, "BOTTOM", -widgetHorizontalSpacing, widgetVerticalSpacing)
     -- R
     local optionsFrameR = NewOptionFrame(optionsFrame, optionsFrame:GetName().."_Right", 200, widgetVerticalSpacing/2, widgetHorizontalSpacing/2)
     optionsFrameR:SetPoint("TOPRIGHT", optionsFrame, "TOPRIGHT", -widgetHorizontalSpacing, -widgetVerticalSpacing)
     optionsFrameR:SetPoint("LEFT", optionsFrameL, "RIGHT", widgetHorizontalSpacing, 0)
     optionsFrameR:SetPoint("BOTTOMRIGHT", optionsFrame, "BOTTOMRIGHT", -widgetHorizontalSpacing, widgetVerticalSpacing)
 
-    optionsFrameL.AddWidget(NewCheckbox(optionsFrame, "enabled"))
-    optionsFrameL.AddWidget(NewCheckbox(optionsFrame, "highlightFriends"))
-    optionsFrameL.AddWidget(NewCheckbox(optionsFrame, "highlightGuild"))
-    optionsFrameL.AddWidget(NewCheckbox(optionsFrame, "highlightGroup"))
+    optionsFrameL.AddWidget(NewCheckbox(optionsFrameL, "enabled"))
+
+    local highlightOptionsFrame = NewOptionFrame(optionsFrameL, optionsFrame:GetName().."_Highlights", subFrameWidth, widgetVerticalSpacing * 2, widgetHorizontalSpacing)
+    highlightOptionsFrame.AddWidget(NewHeader(highlightOptionsFrame, "Highlights")) -- TODO: i18n
+    highlightOptionsFrame.AddWidget(NewCheckbox(highlightOptionsFrame, "highlightGuild"))
+    highlightOptionsFrame.AddWidget(NewCheckbox(highlightOptionsFrame, "highlightFriends"))
+    highlightOptionsFrame.AddWidget(NewCheckbox(highlightOptionsFrame, "highlightGroup"))
+    highlightOptionsFrame:PositionWidgets()
+    highlightOptionsFrame:SetBackdropColor(0.3, 0.3, 0.3, subFrameBGAlpha)
+    highlightOptionsFrame:SetBackdropBorderColor(0.3, 0.3, 0.3, subFrameBGAlpha)
+    optionsFrameL.AddWidget(highlightOptionsFrame)
 
     -- Advanced
     local advancedOptionsFrame = NewOptionFrame(optionsFrameL, optionsFrame:GetName().."_Advanced", subFrameWidth, widgetVerticalSpacing * 2, widgetHorizontalSpacing)
-    -- advancedOptionsFrame.AddWidget(NewSlider(advancedOptionsFrame, "veryNearDistanceThreshold", 0, 30, 1))
-    -- advancedOptionsFrame.AddWidget(NewSlider(advancedOptionsFrame, "nearDistanceThreshold", 5, 60, 1))
-    -- advancedOptionsFrame.AddWidget(NewSlider(advancedOptionsFrame, "midDistanceThreshold", 25, 60, 1))
-    -- advancedOptionsFrame.AddWidget(NewSlider(advancedOptionsFrame, "farDistanceThreshold", 60, 200, 1))
-    -- advancedOptionsFrame.AddWidget(NewCheckbox(advancedOptionsFrame, "showLanguage"))
-    -- advancedOptionsFrame.AddWidget(NewSlider(advancedOptionsFrame, "unitSearchTargetDepth", 1, 5, 1))
     local function resetNameplateTicker() KvChatDistance.nameplates:ResetTicker() end
+    advancedOptionsFrame.AddWidget(NewHeader(advancedOptionsFrame, "Advanced")) -- TODO: i18n
     advancedOptionsFrame.AddWidget(NewCheckbox(advancedOptionsFrame, "useNameplateTrick", nil, resetNameplateTicker))
     advancedOptionsFrame.AddWidget(NewSlider(advancedOptionsFrame, "nameplateTickerInterval", 1, 60, 1, resetNameplateTicker))
     advancedOptionsFrame:PositionWidgets()
@@ -237,6 +268,7 @@ function KvChatDistance:CreateOptionsMenu()
 
     -- Say
     local sayOptionsFrame = NewOptionFrame(optionsFrameR, optionsFrame:GetName().."_SubFrame_Say", subFrameWidth, widgetVerticalSpacing * 2, widgetHorizontalSpacing)
+    sayOptionsFrame.AddWidget(NewHeader(sayOptionsFrame, "Say")) -- TODO: i18n
     sayOptionsFrame.AddWidget(NewCheckbox(sayOptionsFrame, "sayEnabled"))
     sayOptionsFrame.AddWidget(NewSlider(sayOptionsFrame, "sayColorMin", 0.0, 1.0, 0.05))
     sayOptionsFrame.AddWidget(NewSlider(sayOptionsFrame, "sayColorMid", 0.0, 1.0, 0.05))
@@ -249,6 +281,7 @@ function KvChatDistance:CreateOptionsMenu()
 
     -- Emote
     local emoteOptionsFrame = NewOptionFrame(optionsFrameR, optionsFrame:GetName().."_SubFrame_Emote", subFrameWidth, widgetVerticalSpacing * 2, widgetHorizontalSpacing)
+    emoteOptionsFrame.AddWidget(NewHeader(emoteOptionsFrame, "Emote")) -- TODO: i18n
     emoteOptionsFrame.AddWidget(NewCheckbox(emoteOptionsFrame, "emoteEnabled"))
     emoteOptionsFrame.AddWidget(NewSlider(emoteOptionsFrame, "emoteColorMin", 0.0, 1.0, 0.05))
     emoteOptionsFrame.AddWidget(NewSlider(emoteOptionsFrame, "emoteColorMid", 0.0, 1.0, 0.05))
@@ -261,6 +294,7 @@ function KvChatDistance:CreateOptionsMenu()
 
     -- Yell
     local yellOptionsFrame = NewOptionFrame(optionsFrameR, optionsFrame:GetName().."_SubFrame_Yell", subFrameWidth, widgetVerticalSpacing * 2, widgetHorizontalSpacing)
+    yellOptionsFrame.AddWidget(NewHeader(yellOptionsFrame, "Yell")) -- TODO: i18n
     yellOptionsFrame.AddWidget(NewCheckbox(yellOptionsFrame, "yellEnabled"))
     yellOptionsFrame.AddWidget(NewSlider(yellOptionsFrame, "yellColorMin", 0.0, 1.0, 0.05))
     yellOptionsFrame.AddWidget(NewSlider(yellOptionsFrame, "yellColorMid", 0.0, 1.0, 0.05))
@@ -271,6 +305,27 @@ function KvChatDistance:CreateOptionsMenu()
     yellOptionsFrame:SetWidth(180)
     optionsFrameR.AddWidget(yellOptionsFrame)
 
+    -- Debug Options
+    if debugMode or UnitName("player") == "Blacktongue" then
+        local debugOptionsFrame = NewOptionFrame(optionsFrameL, optionsFrame:GetName().."_Debug", subFrameWidth, widgetVerticalSpacing * 2, widgetHorizontalSpacing)
+        debugOptionsFrame.AddWidget(NewHeader(debugOptionsFrame, "Debug")) -- TODO: i18n
+        debugOptionsFrame.AddWidget(NewCheckbox(debugOptionsFrame, "debugMode", nil, nil))
+        debugOptionsFrame.AddWidget(NewCheckbox(debugOptionsFrame, "hideNameplatesDuringTrick", nil, resetNameplateTicker))
+        debugOptionsFrame.AddWidget(NewSlider(debugOptionsFrame, "nameplateTickerHideDelay", 0.001, 3.00, 0.001, resetNameplateTicker))
+        debugOptionsFrame.AddWidget(NewCheckbox(debugOptionsFrame, "prefixStrangers", nil, nil))
+        debugOptionsFrame.AddWidget(NewCheckbox(debugOptionsFrame, "prefixNPCs", nil, nil))
+        -- debugOptionsFrame.AddWidget(NewSlider(debugOptionsFrame, "veryNearDistanceThreshold", 0, 30, 1))
+        -- debugOptionsFrame.AddWidget(NewSlider(debugOptionsFrame, "nearDistanceThreshold", 5, 60, 1))
+        -- debugOptionsFrame.AddWidget(NewSlider(debugOptionsFrame, "midDistanceThreshold", 25, 60, 1))
+        -- debugOptionsFrame.AddWidget(NewSlider(debugOptionsFrame, "farDistanceThreshold", 60, 200, 1))
+        -- debugOptionsFrame.AddWidget(NewCheckbox(debugOptionsFrame, "showLanguage"))
+        debugOptionsFrame.AddWidget(NewSlider(debugOptionsFrame, "unitSearchTargetDepth", 1, 10, 1))
+        debugOptionsFrame:PositionWidgets()
+        debugOptionsFrame:SetBackdropColor(0.3, 0.3, 0.3, subFrameBGAlpha)
+        debugOptionsFrame:SetBackdropBorderColor(0.3, 0.3, 0.3, subFrameBGAlpha)
+        debugOptionsFrame:SetWidth(270)
+        optionsFrameL.AddWidget(debugOptionsFrame)
+    end
     optionsFrameL:PositionWidgets()
     optionsFrameR:PositionWidgets()
 end
@@ -279,9 +334,4 @@ function KvChatDistance:OpenOptionsMenu()
     -- Run it twice, because the first one only opens the main interface window.
     InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
     InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
-end
-
-function KvChatDistance:DebugOptionsMenu()
-    KvChatDistance:CreateOptionsMenu()
-    KvChatDistance:OpenOptionsMenu()
 end

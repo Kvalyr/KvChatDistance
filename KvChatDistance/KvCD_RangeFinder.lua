@@ -69,7 +69,8 @@ function KvChatDistance:CacheUnitRangeFromNameplate(nameplateID)
     local unitName = UnitName(nameplateID)
     if not unitName then return end
 
-    -- KLib:Con("KvChatDistance", "CacheUnitRangeFromNameplate", unitName, minRange, maxRange)
+    KvChatDistance:Debug("KvChatDistance", "CacheUnitRangeFromNameplate", unitName, minRange, maxRange)
+    
     self:StoreUnitRangeInfo(unitName, minRange, maxRange)
 end
 

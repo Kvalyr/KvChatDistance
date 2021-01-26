@@ -20,6 +20,53 @@ end
 -- TODO: Kill this file by using KLibLite
 -- --------------------------------------------------------
 
+-- --------------------------------------------------------------------------------------------------------------------
+-- Debugging
+-- --------------------------------------------------------
+function KvChatDistance:ToggleDebugMode(bool)
+    if bool ~= nil then
+        if bool == false then
+            _G["KvChatDistance_SV"].settings.debugMode = false
+        elseif bool then
+            _G["KvChatDistance_SV"].settings.debugMode = true
+        end
+    else
+        _G["KvChatDistance_SV"].settings.debugMode = not (_G["KvChatDistance_SV"].settings.debugMode)
+    end
+end
+
+function KvChatDistance:DebugOptionsMenu()
+    KvChatDistance:CreateOptionsMenu()
+    KvChatDistance:OpenOptionsMenu()
+end
+
+function KvChatDistance:Debug(...)
+    if not KLib or not KLib.Con then return end
+    if self:GetSettings().debugMode then
+        KLib:Con("KvChatDistance", ...)
+    end
+end
+
+-- --------------------------------------------------------------------------------------------------------------------
+-- Friends/Guild/Group
+-- --------------------------------------------------------
+function KvChatDistance.IsFriend(unitName)
+    C_FriendList.ShowFriends()
+    local friendInfo = C_FriendList.GetFriendInfo(unitName)
+    if friendInfo then return true end
+    return false
+end
+
+function KvChatDistance.IsUnitInPlayerGuild(unitID)
+    C_GuildInfo.GuildRoster()
+    local playerGuild = GetGuildInfo("player")
+    local unitGuild = GetGuildInfo(unitID)
+    return playerGuild == unitGuild
+end
+
+-- --------------------------------------------------------------------------------------------------------------------
+-- Stuff to get from KLib
+-- --------------------------------------------------------
 function KvChatDistance.InCombat()
     return InCombatLockdown() or UnitAffectingCombat("player") or UnitAffectingCombat("pet")
 end
