@@ -7,6 +7,7 @@ local C_Timer = _G["C_Timer"]
 local GetMessageTypeColor = _G["GetMessageTypeColor"]
 local UnitInParty = _G["UnitInParty"]
 local UnitInRaid = _G["UnitInRaid"]
+local UnitName = _G["UnitName"]
 -- ====================================================================================================================
 -- Debugging
 local KLib = _G["KLib"]
@@ -124,12 +125,16 @@ function KvChatDistance.FilterFunc(chatFrame, event, msg, author, language,  ...
         shouldApply = false
     end
 
-    if not shouldApply then
-        return false, msg, author, language, ...
-    end
-
     local origAuthor = author
     author = strsplit("-", author)
+
+    if author == UnitName("player") then
+        shouldApply = false
+    end
+
+    if not shouldApply then
+        return false, msg, origAuthor, language, ...
+    end
 
     local unitID = KvChatDistance.GetViableUnitIDForName(author)
 
