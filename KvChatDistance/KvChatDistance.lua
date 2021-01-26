@@ -17,7 +17,8 @@ end
 -- + Make the Config UI not suck
 -- + Configurable colors for: Friends, Guildmates, Party/Raid
 -- + Slashcommands
--- + Self?
+-- + Self-highlight?
+-- + Configurable prefixes for Near/Friend/Guild/Group
 -- ====================================================================================================================
 
 -- --------------------------------------------------------------------------------------------------------------------
@@ -64,8 +65,8 @@ function KvChatDistance:InitAccountSavedVariables()
     }
     if not _G["KvChatDistance_SV"] then
         _G["KvChatDistance_SV"] = {settings = {}}
-        KvChatDistance.TableMergeNoOverwrite(self.settingsDefaults, _G["KvChatDistance_SV"].settings)
     end
+    KvChatDistance.TableMergeNoOverwrite(self.settingsDefaults, _G["KvChatDistance_SV"].settings)
 end
 
 -- --------------------------------------------------------------------------------------------------------------------
@@ -88,6 +89,7 @@ function KvChatDistance:Init()
 
     local guildColorR, guildColorG, guildColorB = GetMessageTypeColor("GUILD")
     KvChatDistance.guildColor = KvChatDistance.RGBDecToHex(guildColorR, guildColorG, guildColorB)
+    KvChatDistance.groupColor = KvChatDistance.guildColor -- TODO
     KvChatDistance.friendColor = "55EEDD"
 
     ChatFrame_AddMessageEventFilter("CHAT_MSG_SAY", KvChatDistance.FilterFunc)
@@ -109,7 +111,7 @@ end
 -- --------------------------------------------------------
 function KvChatDistance:PLAYER_LOGIN(event, addon)
     -- Delay initialization for some time after the event to give the server time to populate friend info
-    C_Timer.After(7, function() KvChatDistance:Init() end)
+    C_Timer.After(3, function() KvChatDistance:Init() end)
 end
 
 function KvChatDistance:OnEvent(event, ...)
@@ -118,6 +120,12 @@ function KvChatDistance:OnEvent(event, ...)
         KvChatDistance:PLAYER_LOGIN(event, ...)
     else
         if not KvChatDistance.initDone then return end
+
+        if event == "PLAYER_LEAVING_WORLD" or event == "PLAYER_LOGOUT" then
+            -- Make sure we don't persist our CVar changes to the player's settings
+            KvChatDistance.nameplates:UndoCVarChanges()
+        end
+
         if KvChatDistance.InCombat() then return end
 
         if event == "NAME_PLATE_UNIT_ADDED" then
@@ -128,6 +136,8 @@ function KvChatDistance:OnEvent(event, ...)
     end
 end
 
+KvChatDistance:RegisterEvent("PLAYER_LEAVING_WORLD")
+KvChatDistance:RegisterEvent("PLAYER_LOGOUT")
 KvChatDistance:RegisterEvent("PLAYER_LOGIN")
 KvChatDistance:RegisterEvent("NAME_PLATE_UNIT_ADDED")
 KvChatDistance:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
