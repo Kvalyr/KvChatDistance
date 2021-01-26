@@ -79,7 +79,7 @@ local function CheckboxOnClick(self)
     self:SetValue(checked)
 end
 
-local function NewCheckbox(parent, variableName, onClickFunction)
+local function NewCheckbox(parent, variableName, onClickFunction, changedCallback)
     onClickFunction = onClickFunction or CheckboxOnClick
     -- local displayData = CanIMogItOptions_DisplayData[variableName]
     local checkbox = CreateFrame("CheckButton", "KVCD_Widget_" .. variableName, parent, "InterfaceOptionsCheckButtonTemplate")
@@ -89,7 +89,10 @@ local function NewCheckbox(parent, variableName, onClickFunction)
     checkbox.GetValue = function (self)
         return _G["KvChatDistance_SV"].settings[variableName]
     end
-    checkbox.SetValue = function (self, value) _G["KvChatDistance_SV"].settings[variableName] = value end
+    checkbox.SetValue = function (self, value)
+        _G["KvChatDistance_SV"].settings[variableName] = value
+        if changedCallback then changedCallback(checkbox, value) end
+    end
 
     checkbox:SetScript("OnClick", onClickFunction)
     checkbox:SetChecked(checkbox:GetValue())
@@ -105,7 +108,7 @@ end
 -- --------------------------------------------------------------------------------------------------------------------
 -- Slider
 -- --------------------------------------------------------
-local function NewSlider(parent, variableName, minVal, maxVal, step)
+local function NewSlider(parent, variableName, minVal, maxVal, step, changedCallback)
     local widget = CreateFrame("Slider", "KVCD_Widget_" .. variableName, parent, "OptionsSliderTemplate")
     widget.extraSpacing = 8
 
@@ -122,9 +125,9 @@ local function NewSlider(parent, variableName, minVal, maxVal, step)
         local newValue = KvChatDistance.RoundNumber(widget:GetValue(), 2)
         widget.curVal:SetText(newValue)
         _G["KvChatDistance_SV"].settings[variableName] = newValue
+        if changedCallback then changedCallback(widget, newValue) end
     end
     widget:SetScript("OnValueChanged", widget.OnValueChanged)
-
 
     widget:SetMinMaxValues(minVal, maxVal)
     widget:SetValueStep(step)
@@ -196,7 +199,7 @@ function KvChatDistance:CreateOptionsMenu()
     local optionsFrameName = "KvChatDistance_OptionsFrame"
     local optionsFrame = NewOptionFrame(UIParent, optionsFrameName, subFrameWidth, widgetVerticalSpacing, widgetHorizontalSpacing/2)
     KvChatDistance.optionsFrame = optionsFrame
-    KvChatDistance.optionsFrame.name = "KvChatDistance"
+    KvChatDistance.optionsFrame.name = "Darken Chat Messages"
     InterfaceOptions_AddCategory(KvChatDistance.optionsFrame)
     optionsFrame:SetBackdropColor(0.3, 0.3, 0.3, 0.5)
 
@@ -223,8 +226,9 @@ function KvChatDistance:CreateOptionsMenu()
     -- advancedOptionsFrame.AddWidget(NewSlider(advancedOptionsFrame, "farDistanceThreshold", 60, 200, 1))
     -- advancedOptionsFrame.AddWidget(NewCheckbox(advancedOptionsFrame, "showLanguage"))
     -- advancedOptionsFrame.AddWidget(NewSlider(advancedOptionsFrame, "unitSearchTargetDepth", 1, 5, 1))
-    advancedOptionsFrame.AddWidget(NewCheckbox(advancedOptionsFrame, "useNameplateTrick"))
-    advancedOptionsFrame.AddWidget(NewSlider(advancedOptionsFrame, "nameplateTickerInterval", 1, 60, 1))
+    local function resetNameplateTicker() KvChatDistance.nameplates:ResetTicker() end
+    advancedOptionsFrame.AddWidget(NewCheckbox(advancedOptionsFrame, "useNameplateTrick", nil, resetNameplateTicker))
+    advancedOptionsFrame.AddWidget(NewSlider(advancedOptionsFrame, "nameplateTickerInterval", 1, 60, 1, resetNameplateTicker))
     advancedOptionsFrame:PositionWidgets()
     advancedOptionsFrame:SetBackdropColor(0.3, 0.3, 0.3, subFrameBGAlpha)
     advancedOptionsFrame:SetBackdropBorderColor(0.3, 0.3, 0.3, subFrameBGAlpha)

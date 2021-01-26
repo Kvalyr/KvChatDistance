@@ -88,6 +88,7 @@ function KvChatDistance.nameplates.TickerFunc()
 end
 
 function KvChatDistance.nameplates:StartTicker()
+    -- KLib:Con("KvChatDistance","StartTicker")
     -- TODO: Cancel and restart ticker if settings change
     KvChatDistance.nameplates:StoreCurrentCVars()
 
@@ -101,4 +102,9 @@ function KvChatDistance.nameplates:StopTicker()
     if not KvChatDistance.nameplates.ticker then return end
     KvChatDistance.nameplates:Hide()
     KvChatDistance.nameplates.ticker:Cancel()
+end
+
+function KvChatDistance.nameplates:ResetTicker()
+    KvChatDistance.nameplates:StopTicker()
+    KvChatDistance.nameplates:StartTicker()
 end
