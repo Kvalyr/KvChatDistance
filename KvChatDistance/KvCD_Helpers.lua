@@ -95,22 +95,18 @@ function KvChatDistance.RoundNumber(num, places)
 end
 
 -- --------------------------------------------------------------------------------------------------------------------
--- Friends/Guild/Group
--- --------------------------------------------------------
-function KvChatDistance.IsFriend(unitName)
-    C_FriendList.ShowFriends()
-    local friendInfo = C_FriendList.GetFriendInfo(unitName)
-    if friendInfo then return true end
-    return false
+-- HexToRGBPerc - http://wowpedia.org/HexToRGB
+-- --------------------------------
+function KvChatDistance.HexToRGB(hex)
+    if type(hex) == "string" then
+        local m = #hex == 3 and 17 or (#hex == 6 and 1 or 0)
+        local rhex, ghex, bhex = hex:match('^(%x%x?)(%x%x?)(%x%x?)$')
+        if rhex and m > 0 then
+            return tonumber(rhex, 16) * m, tonumber(ghex, 16) * m, tonumber(bhex, 16) * m
+        end
+    end
+    return 0, 0, 0
 end
-
-function KvChatDistance.IsUnitInPlayerGuild(unitID)
-    C_GuildInfo.GuildRoster()
-    local playerGuild = GetGuildInfo("player")
-    local unitGuild = GetGuildInfo(unitID)
-    return playerGuild == unitGuild
-end
-
 
 -- --------------------------------------------------------------------------------------------------------------------
 -- Based on: HexToRGBPerc - http://wowpedia.org/HexToRGB

@@ -44,8 +44,8 @@ function KvChatDistance:InitAccountSavedVariables()
         highlightGuild = true,
         highlightGroup = true,
 
-        useNameplateTrick = false,
-        nameplateTickerInterval = 30,
+        useNameplateTrick = true,
+        nameplateTickerInterval = 15,
         unitSearchTargetDepth = 3,
 
         sayEnabled = true,
@@ -62,6 +62,26 @@ function KvChatDistance:InitAccountSavedVariables()
         yellColorMin = 0.35,
         yellColorMid = 0.45,
         yellColorMax = 0.85,
+
+        prefixFriends = false,
+        prefixFriends_Str = "[F]",
+        prefixGuild = false,
+        prefixGuild_Str = "[G]",
+        prefixGroup = false,
+        prefixGroup_Str = "[P]",
+        prefixTarget = false,
+        prefixTarget_Str = "[T]",
+        prefixFocus = false,
+        prefixFocus_Str = "[X]",
+
+        -- Debug settings
+        debugMode = false,
+        hideNameplatesDuringTrick = false,
+        nameplateTickerHideDelay = 0.01,
+        prefixNPCs = false,
+        prefixNPCs_Str = "[NPC]",
+        prefixStrangers = false,
+        prefixStrangers_Str = "[S]",
     }
     if not _G["KvChatDistance_SV"] then
         _G["KvChatDistance_SV"] = {settings = {}}
