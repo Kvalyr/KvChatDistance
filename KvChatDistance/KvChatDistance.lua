@@ -38,7 +38,12 @@ end
 -- InitSavedVariables
 -- --------------------------------------------------------
 function KvChatDistance:InitAccountSavedVariables()
+    local currentSettingsVersion = 2
+    local settingsToForciblyUpgrade = {
+        "useNameplateTrick",    -- Need to make this default-on to stem the tide of "everything is grey" reports
+    }
     self.settingsDefaults = {
+        settingsVersion = currentSettingsVersion,
         enabled = true,
         highlightFriends = true,
         highlightGuild = true,
@@ -84,8 +89,24 @@ function KvChatDistance:InitAccountSavedVariables()
         prefixStrangers_Str = "[S]",
     }
     if not _G["KvChatDistance_SV"] then
+        KvChatDistance:Debug("InitAccountSavedVariables", "No existing SV")
         _G["KvChatDistance_SV"] = {settings = {}}
+    else
+        KvChatDistance:Debug("InitAccountSavedVariables", "Existing SV")
+
+        -- Selectively reset certain settings to defaults on new versions
+        local prevSettingsVersion = _G["KvChatDistance_SV"].settingsVersion
+        if (not prevSettingsVersion) or prevSettingsVersion < currentSettingsVersion then
+            KvChatDistance:Debug("Newer version of settings than stored in SV.")
+            for _, key in pairs(settingsToForciblyUpgrade) do
+                local newValue = self.settingsDefaults[key]
+                KvChatDistance:Debug("Forcibly updating setting", key, "from", _G["KvChatDistance_SV"].settings[key], "to", newValue)
+                _G["KvChatDistance_SV"].settings[key] = newValue
+            end
+        end
     end
+
+    -- Populate SV settings with any from defaults that are missing
     KvChatDistance.TableMergeNoOverwrite(self.settingsDefaults, _G["KvChatDistance_SV"].settings)
 end
 

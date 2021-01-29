@@ -119,11 +119,10 @@ end
 -- --------------------------------------------------------
 function KvChatDistance.nameplates.TickerFunc()
     local settings = KvChatDistance:GetSettings()
+    if not settings.useNameplateTrick then return end
 
-    if settings.useNameplateTrick then
-        KvChatDistance.nameplates:ForceShow(settings.hideNameplatesDuringTrick)
-        C_Timer.After(settings.nameplateTickerHideDelay, function() KvChatDistance.nameplates:Hide() end)
-    end
+    KvChatDistance.nameplates:ForceShow(settings.hideNameplatesDuringTrick)
+    C_Timer.After(settings.nameplateTickerHideDelay, function() KvChatDistance.nameplates:Hide() end)
 end
 
 function KvChatDistance.nameplates:StartTicker()
@@ -143,7 +142,7 @@ function KvChatDistance.nameplates:StopTicker()
     KvChatDistance.nameplates:Hide()
     KvChatDistance.nameplates.ticker:Cancel()
 end
-
+ 
 function KvChatDistance.nameplates:ResetTicker()
     KvChatDistance.nameplates:StopTicker()
     KvChatDistance.nameplates:StartTicker()

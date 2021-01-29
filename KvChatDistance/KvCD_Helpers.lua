@@ -2,6 +2,8 @@
 -- =	KvChatDistance - Text effects by distance to source unit
 -- =	Copyright (c) Kvalyr - 2021 - All Rights Reserved
 -- ====================================================================================================================
+local strlen = _G["strlen"]
+local strsplit = _G["strsplit"]
 local C_FriendList = _G["C_FriendList"]
 local C_GuildInfo = _G["C_GuildInfo"]
 local GetGuildInfo = _G["GetGuildInfo"]
@@ -92,6 +94,18 @@ function KvChatDistance.RoundNumber(num, places)
     if not num then return end
     local mult = 10^(places or 0)
     return math.floor(num * mult + 0.5) / mult
+end
+
+-- --------------------------------------------------------------------------------------------------------------------
+-- Count number of decimal places in a number
+-- ----------------------------------------------------------------
+function KvChatDistance.CountDecimalPlaces(num)
+    local integer, decimal = strsplit(".", tostring(num), 2)
+    if decimal then
+        return strlen(decimal)
+    else
+        return 0
+    end
 end
 
 -- --------------------------------------------------------------------------------------------------------------------

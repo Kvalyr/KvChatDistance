@@ -97,6 +97,9 @@ local function NewCheckbox(parent, variableName, onClickFunction, changedCallbac
         if changedCallback then changedCallback(checkbox, value) end
     end
 
+    local onShowFunction = function() checkbox:SetChecked(checkbox:GetValue()) end
+    checkbox:SetScript("OnShow", onShowFunction)
+
     checkbox:SetScript("OnClick", onClickFunction)
     checkbox:SetChecked(checkbox:GetValue())
 
@@ -113,6 +116,10 @@ end
 -- --------------------------------------------------------
 local function NewSlider(parent, variableName, minVal, maxVal, step, changedCallback)
     local widget = CreateFrame("Slider", "KVCD_Widget_" .. variableName, parent, "OptionsSliderTemplate")
+    widget.valueStep = step
+    widget:SetMinMaxValues(minVal, maxVal)
+    widget:SetObeyStepOnDrag(true)
+    widget:SetValueStep(step)
     widget.extraSpacing = 8
 
     widget.curVal = widget:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
@@ -124,17 +131,21 @@ local function NewSlider(parent, variableName, minVal, maxVal, step, changedCall
     end
     widget:SetScript("OnMinMaxChanged", widget.OnMinMaxChanged)
 
-    widget.OnValueChanged = function(self)
-        local newValue = KvChatDistance.RoundNumber(widget:GetValue(), 2)
-        widget.curVal:SetText(newValue)
-        _G["KvChatDistance_SV"].settings[variableName] = newValue
-        if changedCallback then changedCallback(widget, newValue) end
+    widget.OnValueChanged = function(self, textOnly)
+        local decimalPlaces = math.min(KvChatDistance.CountDecimalPlaces(widget.valueStep), 3)
+        local newValue = KvChatDistance.RoundNumber(self:GetValue(), decimalPlaces)
+        self.curVal:SetText(newValue)
+
+        if not textOnly then
+            _G["KvChatDistance_SV"].settings[variableName] = newValue
+            if changedCallback then changedCallback(self, newValue) end
+        end
     end
     widget:SetScript("OnValueChanged", widget.OnValueChanged)
 
-    widget:SetMinMaxValues(minVal, maxVal)
-    widget:SetValueStep(step)
-    widget:SetObeyStepOnDrag(true)
+    local onShowFunction = widget:OnValueChanged(true)
+    widget:SetScript("OnShow", onShowFunction)
+
     widget:SetValue(_G["KvChatDistance_SV"].settings[variableName])
 
     widget.label = _G[widget:GetName() .. "Text"]
