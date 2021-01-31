@@ -7,8 +7,14 @@ local strsplit = _G["strsplit"]
 local C_FriendList = _G["C_FriendList"]
 local C_GuildInfo = _G["C_GuildInfo"]
 local GetGuildInfo = _G["GetGuildInfo"]
+local GetNumGuildMembers = _G["GetNumGuildMembers"]
 local InCombatLockdown = _G["InCombatLockdown"]
+local IsInGuild = _G["IsInGuild"]
+local SetGuildRosterShowOffline = _G["SetGuildRosterShowOffline"]
 local UnitAffectingCombat = _G["UnitAffectingCombat"]
+local UnitFullName = _G["UnitFullName"]
+local UnitIsPlayer = _G["UnitIsPlayer"]
+local UnitName = _G["UnitName"]
 -- ====================================================================================================================
 -- Debugging
 local KLib = _G["KLib"]
@@ -42,17 +48,109 @@ function KvChatDistance:DebugOptionsMenu()
     KvChatDistance:OpenOptionsMenu()
 end
 
+function KvChatDistance:Con(...)
+    if not KLib or not KLib.Con then return end
+    KLib:Con("KvChatDistance", ...)
+end
+
 function KvChatDistance:Debug(...)
     if not KLib or not KLib.Con then return end
     if self:GetSettings().debugMode then
-        KLib:Con("KvChatDistance", ...)
+        KLib:Con("KvChatDistance", "DEBUG", ...)
     end
+end
+
+function KvChatDistance:Debug2(...)
+    local settings = self:GetSettings()
+    if settings.debugMode and settings.debugLevel > 1 then
+        KvChatDistance:Debug(...)
+    end
+end
+
+function KvChatDistance:Debug3(...)
+    local settings = self:GetSettings()
+    if settings.debugMode and settings.debugLevel > 2 then
+        KvChatDistance:Debug(...)
+    end
+end
+
+function KvChatDistance:Debug4(...)
+    local settings = self:GetSettings()
+    if settings.debugMode and settings.debugLevel > 3 then
+        KvChatDistance:Debug(...)
+    end
+end
+
+function KvChatDistance:CommsTest(target, channel)
+    if not target then target = UnitName("player") end
+    if not channel then channel = "WHISPER" end
+
+    self:CommsTransmit("MI", {"--Test Miscellaneous Message--"}, channel, target)
+
+    KvChatDistance:CommsRequestVersion(target, channel)
+    KvChatDistance:CommsRequestPosition(target, channel)
+    KvChatDistance:CommsRequestRange(target, channel, nil)
+end
+
+-- --------------------------------------------------------------------------------------------------------------------
+--
+-- --------------------------------------------------------
+function KvChatDistance.TableIsEmpty(tab)
+    if next(tab) == nil then
+        return true
+    end
+    return false
+end
+
+-- --------------------------------------------------------------------------------------------------------------------
+-- Unit Names
+-- --------------------------------------------------------
+function KvChatDistance.UnitNameIsPlayer(unitName)
+    if unitName == KvChatDistance.constants.playerName then return true end
+    if unitName == KvChatDistance.constants.playerNameWithRealm then return true end
+    return false
+end
+
+function KvChatDistance.StripRealmFromUnitName(unitFullName)
+    return strsplit("-", unitFullName)
+end
+
+function KvChatDistance.IsUnitNameSameRealm(unitFullName)
+    local unitName, unitRealm = strsplit("-", unitFullName)
+    if unitName then
+        if not unitRealm then
+            return true
+        end
+        if unitRealm and unitRealm == KvChatDistance.constants.playerRealm then
+            return true
+        end
+    end
+    return false
+end
+
+function KvChatDistance.StripRealmFromUnitNameIfSameRealm(unitName)
+    if KvChatDistance.IsUnitNameSameRealm(unitName) then
+        unitName = KvChatDistance.StripRealmFromUnitName(unitName)
+    end
+    return unitName
+end
+
+function KvChatDistance.UnitNameWithRealm(unitID)
+    if unitID == "player" then return KvChatDistance.constants.playerNameWithRealm end
+    if not UnitIsPlayer(unitID) then
+        return UnitName(unitID)
+    end
+    local unitName, unitRealm = UnitFullName(unitID)
+    if not unitName then return end
+    if not unitRealm then unitRealm = KvChatDistance.constants.playerRealm end
+    return unitName.."-"..unitRealm
 end
 
 -- --------------------------------------------------------------------------------------------------------------------
 -- Friends/Guild/Group
 -- --------------------------------------------------------
 function KvChatDistance.IsFriend(unitName)
+    local unitName = KvChatDistance.StripRealmFromUnitName(unitName)
     C_FriendList.ShowFriends()
     local friendInfo = C_FriendList.GetFriendInfo(unitName)
     if friendInfo then return true end
@@ -66,6 +164,42 @@ function KvChatDistance.IsUnitInPlayerGuild(unitID)
     return playerGuild ~= nil and playerGuild == unitGuild
 end
 
+function KvChatDistance.GetAllGuildMembers()
+    local allGuildMembers = {}
+    if not IsInGuild() then return allGuildMembers end
+
+    SetGuildRosterShowOffline(true)
+    C_GuildInfo.GuildRoster()
+    local numTotalGuildMembers, numOnlineGuildMembers, numOnlineAndMobileMembers = GetNumGuildMembers()
+    for i=1, numTotalGuildMembers do
+        local name, rankName, rankIndex, level, classDisplayName, zone, publicNote, officerNote, isOnline, status, class, achievementPoints, achievementRank, isMobile, canSoR, repStanding, GUID = GetGuildRosterInfo(i)
+        -- KvChatDistance:Debug("GetAllGuildMembers", name, rankName, level, isOnline)
+        allGuildMembers[name] = true
+    end
+    return allGuildMembers
+end
+
+function KvChatDistance.GetFriendsNotInGuild()
+    C_FriendList.ShowFriends()
+    local numFriends = C_FriendList.GetNumFriends()
+    local nonGuildFriends = {}
+    if numFriends < 1 then return nonGuildFriends end
+    local guildMembers = KvChatDistance.GetAllGuildMembers()
+
+    for i=1, numFriends do
+        local friendInfo = C_FriendList.GetFriendInfoByIndex(i)
+        -- KvChatDistance:Debug("GetFriendsNotInGuild", friendInfo)
+
+        if friendInfo and friendInfo.connected and friendInfo.name then
+            local friendName = friendInfo.name .. "-" .. KvChatDistance.constants.playerRealm
+            if not guildMembers[friendName] then
+                nonGuildFriends[friendInfo.name] = true
+            end
+        end
+    end
+
+    return nonGuildFriends
+end
 -- --------------------------------------------------------------------------------------------------------------------
 -- Stuff to get from KLib
 -- --------------------------------------------------------

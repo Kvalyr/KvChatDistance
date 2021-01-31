@@ -2,11 +2,12 @@
 ## Title: KvChatDistance
 ## Author: Kvalyr
 ## Notes: Darken Chat Messages by Speaker Distance
-## Version: 0.2.0
+## Version: 0.3.0
 ## SavedVariables: KvChatDistance_SV
 ## X-Curse-Project-ID: 440158
 ## X-WoWI-ID: 25882
 
+Libs\ChatThrottleLib.lua
 Libs\LibStub.lua
 Libs\LibRangeCheck-2.0.lua
 
@@ -15,4 +16,8 @@ KvCD_Helpers.lua
 KvCD_MessageFilter.lua
 KvCD_Nameplates.lua
 KvCD_RangeFinder.lua
+
+KvCD_Comms.lua
+KvCD_Position.lua
+
 KvCD_Options.lua

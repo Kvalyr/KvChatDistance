@@ -18,13 +18,16 @@ KvChatDistance.nameplates = {}
 -- --------------------------------------------------------------------------------------------------------------------
 -- Events
 -- --------------------------------------------------------
-function KvChatDistance:NAME_PLATE_UNIT_ADDED(event, ...)
-    KvChatDistance:CacheUnitRangeFromNameplate(...)
+function KvChatDistance:NAME_PLATE_UNIT_ADDED(event, unitID, ...)
+    -- KvChatDistance:RangeCacheFromUnit(...)
+    KvChatDistance:CacheUnit(unitID, nil, event)
+    -- TODO: hideNameplatesDuringTrick here
 end
 
-function KvChatDistance:NAME_PLATE_UNIT_REMOVED(event, ...)
-    KvChatDistance:CacheUnitRangeFromNameplate(...) -- Last known
-    -- KvChatDistance:UncacheUnitRangeFromNameplate(...)
+function KvChatDistance:NAME_PLATE_UNIT_REMOVED(event, unitID, ...)
+    -- KvChatDistance:RangeCacheFromUnit(...) -- Last known
+    KvChatDistance:CacheUnit(unitID, nil, event)
+    -- KvChatDistance:RangeUncacheFromUnit(...)
 end
 
 -- --------------------------------------------------------------------------------------------------------------------
@@ -49,7 +52,11 @@ end
 -- --------------------------------------------------------
 function KvChatDistance.nameplates:ChangeCVars()
     C_CVar.SetCVar("nameplateShowOnlyNames", 1)
+    -- Flip the bits back and forth to force the created/removed events to fire
+    -- C_CVar.SetCVar("nameplateShowAll", 0)
     C_CVar.SetCVar("nameplateShowAll", 1)
+    -- C_CVar.SetCVar("nameplateShowEnemies", 0)
+    -- C_CVar.SetCVar("nameplateShowFriends", 0)
     C_CVar.SetCVar("nameplateShowEnemies", 1)
     C_CVar.SetCVar("nameplateShowFriends", 1)
 
@@ -87,26 +94,35 @@ end
 -- --------------------------------------------------------
 function KvChatDistance.nameplates:ForceShow(hideNameplatesDuringTrick)
     if KvChatDistance.InCombat() then return end
-    KvChatDistance:Debug("Showing Nameplates")
+    KvChatDistance:Debug2("Showing Nameplates")
 
     KvChatDistance.nameplates:StoreCurrentCVars()
     KvChatDistance.nameplates:ChangeCVars()
 
-    -- Extra hack to reduce visual interference from nameplates - Hide the frames as soon we can
-    -- We care about nameplates being created/removed - It doesn't matter if they're invisible
-    -- The game will re-show them on recreation anyway (or even just turning the camera)
-    if hideNameplatesDuringTrick then
-        local nameplates = C_NamePlate.GetNamePlates()
-        for _, nameplate in pairs(nameplates) do
-            -- TODO: Filter by friend/enemy/etc in regards to cvars
+    local nameplates = C_NamePlate.GetNamePlates()
+    for _, nameplate in pairs(nameplates) do
+        local unitID = nameplate.namePlateUnitToken
+
+        -- Cache range info for the nameplate while we're here
+        if unitID then
+            -- KvChatDistance:RangeCacheFromUnit(unitID)
+            KvChatDistance:CacheUnit(unitID, nil, "NameplatesForceShow")
+        end
+
+        -- TODO: Filter by friend/enemy/etc in regards to cvars
+        if hideNameplatesDuringTrick then
+            -- Extra hack to reduce visual interference from nameplates - Hide the frames as soon we can
+            -- We care about nameplates being created/removed - It doesn't matter if they're invisible
+            -- The game will re-show them on recreation anyway (or even just turning the camera)
             nameplate:Hide()
         end
     end
+    -- CacheAllNameplates()
 end
 
 function KvChatDistance.nameplates:Hide()
     if KvChatDistance.InCombat() then return end
-    KvChatDistance:Debug("Hiding Nameplates")
+    KvChatDistance:Debug2("Hiding Nameplates")
 
     KvChatDistance.nameplates:UndoCVarChanges()
 
@@ -117,33 +133,10 @@ end
 -- --------------------------------------------------------------------------------------------------------------------
 -- Ticker
 -- --------------------------------------------------------
-function KvChatDistance.nameplates.TickerFunc()
+function KvChatDistance.NameplatesTickerFunc()
     local settings = KvChatDistance:GetSettings()
     if not settings.useNameplateTrick then return end
 
     KvChatDistance.nameplates:ForceShow(settings.hideNameplatesDuringTrick)
     C_Timer.After(settings.nameplateTickerHideDelay, function() KvChatDistance.nameplates:Hide() end)
-end
-
-function KvChatDistance.nameplates:StartTicker()
-    -- KvChatDistance:Debug("StartTicker")
-    KvChatDistance.nameplates:StoreCurrentCVars()
-
-    local settings = KvChatDistance:GetSettings()
-
-    KvChatDistance.nameplates.TickerFunc()
-
-    local ticker = C_Timer.NewTicker(settings.nameplateTickerInterval or 30, KvChatDistance.nameplates.TickerFunc)
-    KvChatDistance.nameplates.ticker = ticker
-end
-
-function KvChatDistance.nameplates:StopTicker()
-    if not KvChatDistance.nameplates.ticker then return end
-    KvChatDistance.nameplates:Hide()
-    KvChatDistance.nameplates.ticker:Cancel()
-end
- 
-function KvChatDistance.nameplates:ResetTicker()
-    KvChatDistance.nameplates:StopTicker()
-    KvChatDistance.nameplates:StartTicker()
 end
