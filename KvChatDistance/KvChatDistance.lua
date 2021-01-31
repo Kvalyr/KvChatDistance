@@ -128,9 +128,9 @@ function KvChatDistance:InitAccountSavedVariables()
         KvChatDistance:Con("InitAccountSavedVariables", "Existing SV")
 
         -- Selectively reset certain settings to defaults on new versions
-        local prevSettingsVersion = _G["KvChatDistance_SV"].settingsVersion
+        local prevSettingsVersion = _G["KvChatDistance_SV"].settings.settingsVersion
         if (not prevSettingsVersion) or prevSettingsVersion < currentSettingsVersion then
-            KvChatDistance:Con("Newer version of settings than stored in SV.")
+            KvChatDistance:Con("Newer version of settings than stored in SV:", _G["KvChatDistance_SV"].settings.settingsVersion, currentSettingsVersion)
             for _, key in pairs(settingsToForciblyUpgrade) do
                 local newValue = self.settingsDefaults[key]
                 KvChatDistance:Con("Forcibly updating setting", key, "from", _G["KvChatDistance_SV"].settings[key], "to", newValue)
