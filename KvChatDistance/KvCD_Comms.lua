@@ -29,6 +29,7 @@ KvChatDistance.comms_prefix = "KVCD"
 KvChatDistance.comms_delimiter = ":"
 
 KvChatDistance.comms_knownPlayers = {}
+KvChatDistance.comms_knownUsers = {}
 KvChatDistance.comms_lastGuildPingTime = 0
 
 -- TODO: Combine version checks with range ping to reduce number of messages?
@@ -117,6 +118,8 @@ function KvChatDistance:CommsRegisterPlayer(newPlayerName, pinged, addonUser, ve
 
     newPlayerName = KvChatDistance.StripRealmFromUnitNameIfSameRealm(newPlayerName)
 
+    KvChatDistance:Debug2("CommsRegisterPlayer", newPlayerName, pinged, addonUser, version, versionApi)
+
     -- TODO: Make this a proper handshake. Compare versions etc.
     -- Consider including broadcast settings in handshake for smarter broadcast/request logic
     if not KvChatDistance.comms_knownPlayers[newPlayerName] then
@@ -136,6 +139,7 @@ function KvChatDistance:CommsRegisterPlayer(newPlayerName, pinged, addonUser, ve
         if compatible then
             KvChatDistance:CommsRequestPosition(newPlayerName)
         end
+        KvChatDistance.comms_knownUsers[newPlayerName] = true
     end
 end
 
@@ -165,6 +169,7 @@ end
 -- --------------------------------------------------------
 function KvChatDistance:CHAT_MSG_ADDON(event, prefix, message, channel, sender, target, zoneChannelID, channelIndex, channelName, instanceID)
     -- https://wow.gamepedia.com/CHAT_MSG_ADDON
+    if prefix ~= self.comms_prefix then return end
 
     local settings = self:GetSettings()
     if not KvChatDistance:Allowed(settings) then return end
@@ -176,7 +181,6 @@ function KvChatDistance:CHAT_MSG_ADDON(event, prefix, message, channel, sender, 
         return
     end
 
-    if prefix ~= self.comms_prefix then return end
     if (settings.debugLevel or 1) < 3 and KvChatDistance.UnitNameIsPlayer(sender) then return end
 
     self:Debug4(event, prefix, message, channel, sender, target, zoneChannelID, channelIndex, channelName, instanceID)
@@ -190,10 +194,12 @@ end
 function KvChatDistance:CommsOnReceived(payload, channel, sender, target)
     if not KvChatDistance.commsInitDone then return end
 
-    KvChatDistance:CommsRegisterPlayer(sender)
-
     local opCode, namedPayloadParams = KvChatDistance:CommsDeserializePayload(payload)
 
+    -- TODO: More robust check than this
+    if opCode and KvChatDistance.comms_opcodes[opCode] ~= nil then
+        KvChatDistance:CommsRegisterPlayer(sender, nil, true)
+    end
     KvChatDistance:Debug2("CommsOnReceived", sender, opCode, namedPayloadParams, channel)
 
     -- TODO: Link these via callbacks for the Opcodes
