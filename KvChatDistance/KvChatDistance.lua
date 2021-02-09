@@ -233,7 +233,6 @@ end
 -- Init
 -- --------------------------------------------------------
 function KvChatDistance:Init()
-    -- KLib:Con("KvChatDistance.Init")
     if self.initDone then return end
 
     local playerName, playerRealm = UnitFullName("player")
@@ -320,7 +319,6 @@ function KvChatDistance:Event_UnitChanged(unitID)
 end
 
 function KvChatDistance:OnEvent(event, ...)
-    -- KLib:Con("KvChatDistance", "OnEvent", event, ...)
     if event == "PLAYER_LOGIN" then
         KvChatDistance:PLAYER_LOGIN(event, ...)
     else

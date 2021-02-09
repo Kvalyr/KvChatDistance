@@ -312,10 +312,10 @@ function KvChatDistance.RGBDecTo255(r,g,b,a)
 end
 
 function KvChatDistance.RGB255ToDec(r,g,b,a)
-    if r then r = KLib.num.Clamp(r / 255, 0, 1) end
-    if g then g = KLib.num.Clamp(g / 255, 0, 1) end
-    if b then b = KLib.num.Clamp(b / 255, 0, 1) end
-    if a then a = KLib.num.Clamp(a / 255, 0, 1) end
+    if r then r = NumberClamp(r / 255, 0, 1) end
+    if g then g = NumberClamp(g / 255, 0, 1) end
+    if b then b = NumberClamp(b / 255, 0, 1) end
+    if a then a = NumberClamp(a / 255, 0, 1) end
     return r,g,b,a
 end
 

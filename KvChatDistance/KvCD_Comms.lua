@@ -180,7 +180,7 @@ function KvChatDistance:CHAT_MSG_ADDON(event, prefix, message, channel, sender, 
 
     -- TODO: These checks may be overkill
     if not (KvChatDistance.commsInitDone and C_ChatInfo.IsAddonMessagePrefixRegistered(self.comms_prefix)) then
-        KLib:Warn("KvChatDistance", "PREFIX NOT REGISTERED", event, prefix, message, channel, sender, target, zoneChannelID, channelIndex, channelName, instanceID)
+        KvChatDistance:Warn("KvChatDistance", "PREFIX NOT REGISTERED", event, prefix, message, channel, sender, target, zoneChannelID, channelIndex, channelName, instanceID)
         return
     end
 

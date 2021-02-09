@@ -162,7 +162,6 @@ end
 function KvChatDistance.GetUnitIDFromN(unitName, unitBase, numToCheck)
     for i=1, numToCheck do
         local unitID = unitBase..i
-        -- KLib:Con("KvChatDistance", "GetUnitIDFromN", "unitID:",  unitID)
 
         if UnitName(unitID) == unitName then
             return unitID
@@ -180,7 +179,6 @@ end
 -- --------------------------------------------------------
 function KvChatDistance.GetViableUnitIDForName(unitName)
     for _, unitID in pairs(unitIDsToTest) do
-        -- KLib:Con("KvChatDistance", "GetViableUnitIDForName", "unitName:", unitName, "unitID:",  unitID)
 
         if UnitName(unitID) == unitName then
             return unitID
