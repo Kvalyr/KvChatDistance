@@ -56,11 +56,21 @@ function KvChatDistance:RangeStoreUnitInfo(unitName, minRange, maxRange)
     local curTime = time()
     unitName = KvChatDistance.StripRealmFromUnitNameIfSameRealm(unitName)
 
+    local avg = minRange
     if not self.unitRangeCache[unitName] then
-        self.unitRangeCache[unitName] = {min=minRange, max=maxRange, time=curTime}
+        if minRange and maxRange then
+            avg = (minRange+maxRange)/2
+        end
+        self.unitRangeCache[unitName] = {min=minRange, max=maxRange, time=curTime, avg=avg}
     else
+        if not minRange then minRange = self.unitRangeCache[unitName].min or 0 end
+        if not maxRange then maxRange = self.unitRangeCache[unitName].max or 0 end
+        if minRange and minRange > 0 and maxRange and maxRange > 0 then
+            avg = (minRange+maxRange)/2
+        end
         self.unitRangeCache[unitName].min = minRange
         self.unitRangeCache[unitName].max = maxRange
+        self.unitRangeCache[unitName].avg = avg
         self.unitRangeCache[unitName].time = curTime
     end
 end
@@ -77,7 +87,7 @@ function KvChatDistance:RangeGetUnitInfo(unitName)
     end
     rangeData = self.unitRangeCache[unitName]
     if rangeData then
-        return rangeData.min, rangeData.max, rangeData.time
+        return rangeData.avg, rangeData.min, rangeData.max, rangeData.time
     end
 end
 
@@ -149,7 +159,7 @@ end
 -- --------------------------------------------------------------------------------------------------------------------
 -- Search N nameplates for a unitName
 -- --------------------------------------------------------
-function GetUnitIDFromN(unitName, unitBase, numToCheck)
+function KvChatDistance.GetUnitIDFromN(unitName, unitBase, numToCheck)
     for i=1, numToCheck do
         local unitID = unitBase..i
         -- KLib:Con("KvChatDistance", "GetUnitIDFromN", "unitID:",  unitID)
@@ -177,7 +187,7 @@ function KvChatDistance.GetViableUnitIDForName(unitName)
         end
 
         if unitID == "nameplateN" then
-            local unitIDFromNameplate = GetUnitIDFromN(unitName, "nameplate", nameplateMax)
+            local unitIDFromNameplate = KvChatDistance.GetUnitIDFromN(unitName, "nameplate", nameplateMax)
             if unitIDFromNameplate then
                 return unitIDFromNameplate
             end
@@ -186,12 +196,12 @@ function KvChatDistance.GetViableUnitIDForName(unitName)
             local numGroupMembers = GetNumGroupMembers()
             if numGroupMembers > 0 then
                 if unitID == "partyN" then
-                    local unitIDFromNameplate = GetUnitIDFromN(unitName, "party", numPartyMembers)
+                    local unitIDFromNameplate = KvChatDistance.GetUnitIDFromN(unitName, "party", numPartyMembers)
                     if unitIDFromNameplate then
                         return unitIDFromNameplate
                     end
                 elseif unitID == "raidN" and IsInRaid() then
-                    local unitIDFromNameplate = GetUnitIDFromN(unitName, "raid", numRaidMembers)
+                    local unitIDFromNameplate = KvChatDistance.GetUnitIDFromN(unitName, "raid", numRaidMembers)
                     if unitIDFromNameplate then
                         return unitIDFromNameplate
                     end
@@ -263,7 +273,7 @@ function KvChatDistance:GetUnitDistanceFromPlayerByName(unitName)
         method = "CachedPosition"
         distance = KvChatDistance:RangeGetDistanceFromPlayerByPosition(cachedPosY, cachedPosX, cachedMapID)
         if distance >= 0 then
-            -- KvChatDistance:Debug2("GetUnitDistanceFromPlayerByName", unitName, method, distance)
+            KvChatDistance:Debug4("GetUnitDistanceFromPlayerByName", unitName, method, distance)
             return distance, method
         end
     end
@@ -271,11 +281,11 @@ function KvChatDistance:GetUnitDistanceFromPlayerByName(unitName)
 
     -- Then try to get librangecheck distance from cache
 
-    local rangeInfo = KvChatDistance:RangeGetUnitInfo(unitName)
-    if rangeInfo then
+    local rangeAvg = KvChatDistance:RangeGetUnitInfo(unitName)
+    if rangeAvg then
         method = "CachedRange"
-        -- KvChatDistance:Debug2("GetUnitDistanceFromPlayerByName", unitName, method, rangeInfo)
-        distance = rangeInfo
+        KvChatDistance:Debug4("GetUnitDistanceFromPlayerByName", unitName, method, rangeAvg)
+        distance = rangeAvg
     end
 
     return distance, method

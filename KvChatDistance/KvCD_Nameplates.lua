@@ -94,7 +94,7 @@ end
 -- --------------------------------------------------------
 function KvChatDistance.nameplates:ForceShow(hideNameplatesDuringTrick)
     if KvChatDistance.InCombat() then return end
-    KvChatDistance:Debug2("Showing Nameplates")
+    KvChatDistance:Debug3("Showing Nameplates")
 
     KvChatDistance.nameplates:StoreCurrentCVars()
     KvChatDistance.nameplates:ChangeCVars()
@@ -122,7 +122,7 @@ end
 
 function KvChatDistance.nameplates:Hide()
     if KvChatDistance.InCombat() then return end
-    KvChatDistance:Debug2("Hiding Nameplates")
+    KvChatDistance:Debug3("Hiding Nameplates")
 
     KvChatDistance.nameplates:UndoCVarChanges()
 

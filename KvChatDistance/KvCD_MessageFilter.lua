@@ -2,6 +2,7 @@
 -- =	KvChatDistance - Text effects by distance to source unit
 -- =	Copyright (c) Kvalyr - 2021 - All Rights Reserved
 -- ====================================================================================================================
+local strlen = _G["strlen"]
 local strsplit = _G["strsplit"]
 local C_Timer = _G["C_Timer"]
 local GetMessageTypeColor = _G["GetMessageTypeColor"]
@@ -43,10 +44,10 @@ end
 -- Given a chat event and a distance, get the appropriate text color and then scale its luminosity appropriately
 -- --------------------------------------------------------
 function KvChatDistance.GetColorForDistance(event, distance, inputColor)
-    local veryNearDistanceEnd = 7 -- 5: Melee range, 7: Duel, 8: Trade
-    local nearDistanceEnd = 10
-    local midDistanceEnd = 50
-    local midDistanceFar = 100
+    local veryNearDistanceEnd = 5 -- 5: Melee range, 7: Duel, 8: Trade
+    local nearDistanceEnd = 8
+    local midDistanceEnd = 20
+    local midDistanceFar = 40
     -- local farDistanceStart = 28
 
     local settings = KvChatDistance:GetSettings()
@@ -92,8 +93,8 @@ function KvChatDistance.GetColorForDistance(event, distance, inputColor)
 
     if distance < 0 then
         -- Distance unknown, assume the speaker is far away or obscured by world geometry
-        multByDistance = distanceMultMin
-        -- KvChatDistance:Debug4("GetColorForDistance", "UNKNOWN", event, distance, multByDistance)
+        multByDistance = settings.unknownColor
+        KvChatDistance:Debug4("GetColorForDistance", "UNKNOWN", event, distance, multByDistance)
     else
         -- Very Near -- Scale colors from distanceMultMax to 1.0
         if distance <= veryNearDistanceEnd then
@@ -106,7 +107,7 @@ function KvChatDistance.GetColorForDistance(event, distance, inputColor)
             -- KvChatDistance:Debug4("GetColorForDistance", "NEAR", event, distance, multByDistance)
 
         -- Mid -- Scale colors from distanceMultMin to distanceMultMid
-        elseif distance <= midDistanceFar then
+        elseif distance <= midDistanceEnd then
             multByDistance = KvChatDistance.ScaleDistance(distance, distanceMultMid, distanceMultMin, midDistanceEnd, midDistanceFar)
             -- KvChatDistance:Debug4("GetColorForDistance", "MID/FAR", event, distance, multByDistance)
         else
@@ -124,9 +125,13 @@ function KvChatDistance:ShouldFilterForEvent(event, author)
     local settings = self:GetSettings()
     local shouldApply = KvChatDistance:Allowed(settings)
     if shouldApply then
-        if author == self.constants.playerName or author == self.constants.playerNameWithRealm then
+        if KvChatDistance.UnitNameIsPlayer(author) then
+            if settings.highlightSelf then
+                return true
+            end
             return false
         end
+        -- TODO: Separate NPC say from player say
         if (event == "CHAT_MSG_SAY" or event == "CHAT_MSG_MONSTER_SAY") and not settings.sayEnabled then
             return false
         end
@@ -143,19 +148,56 @@ end
 -- --------------------------------------------------------------------------------------------------------------------
 --
 -- --------------------------------------------------------
-function KvChatDistance:ApplyPrefixToMessage(msg, event, prefixToApply)
+function KvChatDistance:ApplyColorToString(str, colorToApply)
+    if strlen(colorToApply) ~= 6 then
+        KvChatDistance:Warn("ApplyColorToString", "Malformed color string", colorToApply)
+        return str
+    end
+    return colorStringOpen .. colorToApply .. str .. colorStringClose
+end
+
+-- --------------------------------------------------------------------------------------------------------------------
+--
+-- --------------------------------------------------------
+function KvChatDistance:ApplyPrefixToMessage(msg, event, prefixToApply, prefixColor)
     -- Emotes don't get prefixes
     if event == "CHAT_MSG_EMOTE" or event == "CHAT_MSG_TEXT_EMOTE" then
         return msg
     end
+    if prefixColor and prefixColor ~= "FFFFFF" then
+        prefixToApply = KvChatDistance:ApplyColorToString(prefixToApply, prefixColor)
+    end
+
     return prefixToApply .. " " .. msg
 end
 
 -- --------------------------------------------------------------------------------------------------------------------
 --
 -- --------------------------------------------------------
-function KvChatDistance:ApplyColorToMessage(msg, colorToApply)
-    return colorStringOpen .. colorToApply .. msg .. colorStringClose
+function KvChatDistance:GetSpeakerRelationship(author, unitID, settings)
+    settings = settings or KvChatDistance:GetSettings()
+    local isPlayer = KvChatDistance.UnitNameIsPlayer(author)
+    local isFriend = false
+    local isGuild = false
+    local isGroup = false
+    if not isPlayer then
+        if settings.highlightFriends or settings.prefixFriends then
+            isFriend = KvChatDistance.IsFriend(author)
+        end
+        if unitID then
+            if settings.highlightGuild or settings.prefixGuild then
+                isGuild = KvChatDistance.IsUnitInPlayerGuild(unitID)
+            end
+            if settings.highlightGroup or settings.prefixGroup then
+                isGroup = UnitInParty(unitID) or UnitInRaid(unitID)
+            end
+        else
+            isGuild = KvChatDistance.IsUnitNameInPlayerGuild(author)
+        end
+    end
+    local isStranger = not (isGroup or isFriend or isGuild or isPlayer)
+
+    return isPlayer, isFriend, isGuild, isGroup, isStranger
 end
 
 -- --------------------------------------------------------------------------------------------------------------------
@@ -170,59 +212,65 @@ function KvChatDistance.FilterFunc(chatFrame, event, msg, author, language,  ...
     end
 
     local settings = KvChatDistance:GetSettings()
-
     local unitID = KvChatDistance.GetViableUnitIDForName(author)
-    local isFriend = false
-    local isGuild = false
-    local isGroup = false
     local colorToApply = nil
     local prefixToApply = nil
+    local bypassDistance = false
+    local highlightApplied = false
 
-    if settings.highlightFriends or settings.prefixFriends then
-        isFriend = KvChatDistance.IsFriend(author)
-    end
-    if unitID then
-        if settings.highlightGuild or settings.prefixGuild then
-            isGuild = KvChatDistance.IsUnitInPlayerGuild(unitID)
-        end
-        if settings.highlightGroup or settings.prefixGroup then
-            isGroup = UnitInParty(unitID) or UnitInRaid(unitID)
-        end
-    end
+    local isPlayer, isFriend, isGuild, isGroup, isStranger = KvChatDistance:GetSpeakerRelationship(author, unitID, settings)
 
     -- Prefixes and colors have a priority: Guild, Friend, Group
     if isGuild then
         if settings.highlightGuild then
             -- TODO: Make this color configurable
-            colorToApply = KvChatDistance.guildColor
+            colorToApply = settings.highlightGuildColor
+            highlightApplied = true
         end
         if settings.prefixGuild then
             prefixToApply = settings.prefixGuild_Str
+        end
+        if settings.highlightGuildBypassDistance then
+            bypassDistance = true
         end
     end
     if isFriend then
         if settings.highlightFriends then
             -- TODO: Make this color configurable
-            colorToApply = KvChatDistance.friendColor
+            colorToApply = settings.highlightFriendsColor
+            highlightApplied = true
         end
         if settings.prefixFriends then
             prefixToApply = settings.prefixFriends_Str
+        end
+        if settings.highlightFriendsBypassDistance then
+            bypassDistance = true
         end
     end
     if isGroup then
         if settings.highlightGroup then
             -- TODO: Make this color configurable
-            colorToApply = KvChatDistance.groupColor
+            colorToApply = settings.highlightGroupColor
+            highlightApplied = true
         end
         if settings.prefixGroup then
             prefixToApply = settings.prefixGroup_Str
         end
+        if settings.highlightGroupBypassDistance then
+            bypassDistance = true
+        end
     end
 
-    local isStranger = not (isGroup or isFriend or isGuild)
-    if settings.prefixStrangers and isStranger then
-        prefixToApply = settings.prefixStrangers_Str
-    end
+    if isPlayer then
+        if settings.highlightSelf then
+            -- TODO: Make this color configurable
+            colorToApply = settings.highlightSelfColor
+        end
+        bypassDistance = true
+    else
+        if settings.prefixStrangers and isStranger then
+            prefixToApply = settings.prefixStrangers_Str
+        end
     if settings.prefixNPCs and event == "CHAT_MSG_MONSTER_SAY" then
         prefixToApply = settings.prefixNPCs_Str
     end
@@ -230,25 +278,39 @@ function KvChatDistance.FilterFunc(chatFrame, event, msg, author, language,  ...
     if settings.prefixTarget and unitID == "target" then
         prefixToApply = settings.prefixTarget_Str
     end
-    if settings.prefixFocus and unitID == "focus" then
-        prefixToApply = settings.prefixFocus_Str
+        if settings.prefixFocus and unitID == "focus" then
+            prefixToApply = settings.prefixFocus_Str
+        end
     end
 
     if prefixToApply then
-        msg = KvChatDistance:ApplyPrefixToMessage(msg, event, prefixToApply)
+        local prefixColor = settings.prefixColor
+        msg = KvChatDistance:ApplyPrefixToMessage(msg, event, prefixToApply, prefixColor)
     end
 
     KvChatDistance:CacheUnit(unitID, origAuthor, "FilterFunc")
 
-    -- TODO: Separate toggles for distance/prefix/highlighting per event
-    local distance, methodUsed = KvChatDistance:GetUnitDistanceFromPlayerByName(author)
-    if unitID and ((not distance) or distance < 0) then
-        distance, methodUsed = KvChatDistance:GetUnitDistanceFromPlayerByUnitID(unitID)
+    local distance = -1
+    local methodUsed
+    if bypassDistance then
+        distance = 0
+    else
+        distance, methodUsed = KvChatDistance:GetUnitDistanceFromPlayerByName(author)
+        if unitID and ((not distance) or distance < 0) then
+            distance, methodUsed = KvChatDistance:GetUnitDistanceFromPlayerByUnitID(unitID)
+        end
     end
+
+    -- Apply offset boost to distance when applying a highlight color
+    if not bypassDistance and distance >= 0 and highlightApplied then
+        distance = distance - settings.highlightDistanceOffset
+        distance = math.max(distance, 0)
+    end
+
     colorToApply = KvChatDistance.GetColorForDistance(event, distance, colorToApply)
 
     if colorToApply then
-        msg = KvChatDistance:ApplyColorToMessage(msg, colorToApply)
+        msg = KvChatDistance:ApplyColorToString(msg, colorToApply)
     end
 
     -- if settings.showLanguage and KvChatDistance.StrContains(strlower(language), "common") then -- TODO: Config
@@ -260,8 +322,8 @@ function KvChatDistance.FilterFunc(chatFrame, event, msg, author, language,  ...
         if not throttle then
             -- TODO: Use throttle logic elsewhere since this func will get fired for each chat frame that exists
 
-            KvChatDistance:Debug2("FilterFunc", distance, author, language, unitID, methodUsed, msg )
-            KvChatDistance:Debug3("FilterFunc", "isFriend", isFriend, "isGuild", isGuild, "isGroup", isGroup )
+            KvChatDistance:Debug2("FilterFunc 1", distance, author, language, unitID, methodUsed, msg )
+            KvChatDistance:Debug3("FilterFunc 2", "isFriend", isFriend, "isGuild", isGuild, "isGroup", isGroup )
             -- KvChatDistance:Debug2("FilterFunc", event, author, language, {...})
         end
     end

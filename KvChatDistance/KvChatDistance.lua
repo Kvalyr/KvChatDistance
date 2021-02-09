@@ -92,6 +92,7 @@ function KvChatDistance:InitAccountSavedVariables()
         yellColorMin = 0.25,
         yellColorMid = 0.45,
         yellColorMax = 0.85,
+        unknownColor = 0.50,
 
         prefixColor = "909090",
         prefixFriends = false,
