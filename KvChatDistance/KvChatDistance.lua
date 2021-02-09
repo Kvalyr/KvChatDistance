@@ -8,6 +8,7 @@ local CreateFrame = _G["CreateFrame"]
 local GetInstanceInfo = _G["GetInstanceInfo"]
 local GetMessageTypeColor = _G["GetMessageTypeColor"]
 local UnitFullName = _G["UnitFullName"]
+local UnitIsEnemy = _G["UnitIsEnemy"]
 local UnitIsPlayer = _G["UnitIsPlayer"]
 
 local addon, ns = ...
@@ -60,11 +61,17 @@ function KvChatDistance:InitAccountSavedVariables()
         allowInRaids = false,
         allowInScenarios = false,
 
+        highlightSelf = false,
+        highlightDistanceOffset = 8,
+        highlightSelfColor = "FF0000",
         highlightFriends = true,
+        highlightFriendsColor = "00A9EE",
         highlightFriendsBypassDistance = false,
         highlightGuild = true,
+        highlightGuildColor = KvChatDistance.defaultGuildColor,
         highlightGuildBypassDistance = false,
         highlightGroup = true,
+        highlightGroupColor = "FFCB00",
         highlightGroupBypassDistance = false,
 
         useNameplateTrick = true,
@@ -72,18 +79,21 @@ function KvChatDistance:InitAccountSavedVariables()
         unitSearchTargetDepth = 3,
 
         sayEnabled = true,
-        sayColorMin = 0.30,
-        sayColorMid = 0.45,
-        sayColorMax = 0.80,
+        sayNPCEnabled = true,
+        sayColorMin = 0.20,
+        sayColorMid = 0.65,
+        sayColorMax = 0.90,
         emoteEnabled = true,
-        emoteColorMin = 0.45,
+        emoteNPCEnabled = true,
+        emoteColorMin = 0.25,
         emoteColorMid = 0.55,
         emoteColorMax = 0.75,
         yellEnabled = true,
-        yellColorMin = 0.35,
+        yellColorMin = 0.25,
         yellColorMid = 0.45,
         yellColorMax = 0.85,
 
+        prefixColor = "909090",
         prefixFriends = false,
         prefixFriends_Str = "[F]",
         prefixGuild = false,
@@ -119,6 +129,7 @@ function KvChatDistance:InitAccountSavedVariables()
 
         commsBroadcastTickerInterval = 60,
         commsThrottleDuration = 20,
+        commsThrottleDuration_RV = 300,
         commsThrottleTickerInterval = 9,  -- < Half of throttle duration
     }
     if not _G["KvChatDistance_SV"] then
@@ -201,7 +212,7 @@ function KvChatDistance:OnEnable()
     -- Update comms throttle table
     KvChatDistance:StartTicker("commsThrottle", settings.commsThrottleTickerInterval or 15, self.CommsUpdateThrottle)
 
-    -- Ping/version-check chnnels, friends and known players to handshake addon comms
+    -- Ping/version-check channels, friends and known players to handshake addon comms
     KvChatDistance:StartTicker("commsBroadcast", settings.commsBroadcastTickerInterval or 60, self.CommsBroadcast)
 
     -- Nameplates Show/Hide if enabled
@@ -229,14 +240,12 @@ function KvChatDistance:Init()
     self.constants.playerRealm = playerRealm
     self.constants.playerNameWithRealm = playerName.."-"..playerRealm
 
+    local guildColorR, guildColorG, guildColorB = GetMessageTypeColor("GUILD")
+    KvChatDistance.defaultGuildColor = KvChatDistance.RGBDecToHex(guildColorR, guildColorG, guildColorB)
+
     self:InitAccountSavedVariables()
     self.rangeChecker = LibStub("LibRangeCheck-2.0")
     self.initDone = true
-
-    local guildColorR, guildColorG, guildColorB = GetMessageTypeColor("GUILD")
-    KvChatDistance.guildColor = KvChatDistance.RGBDecToHex(guildColorR, guildColorG, guildColorB)
-    KvChatDistance.groupColor = KvChatDistance.guildColor -- TODO: configurable group color
-    KvChatDistance.friendColor = "55AAEE"
 
     ChatFrame_AddMessageEventFilter("CHAT_MSG_SAY", KvChatDistance.FilterFunc)
     ChatFrame_AddMessageEventFilter("CHAT_MSG_MONSTER_SAY", KvChatDistance.FilterFunc)
@@ -249,7 +258,6 @@ function KvChatDistance:Init()
     end
 
     KvChatDistance:CommsInit()
-
     KvChatDistance:CreateOptionsMenu()
 
 end
@@ -274,8 +282,16 @@ function KvChatDistance:CacheUnit(unitID, unitName, event)
 
     if unitName then
         if unitID and not UnitIsPlayer(unitID) then return end
+        if unitID and UnitIsEnemy("player", unitID) then return end
         KvChatDistance:CachePlayerByName(unitName)
     end
+end
+
+-- Ping the player to see if they use this addon. They get registered if they respond, so we can query them later.
+-- Ping is throttled by comms transmit for safety
+function KvChatDistance:CachePlayerByName(unitName)
+    KvChatDistance:Debug3("CachePlayerByName", unitName)
+    KvChatDistance:ProbePlayerIfUnknown(unitName)
 end
 
 function KvChatDistance:ProbePlayerIfUnknown(playerName)
@@ -288,13 +304,6 @@ function KvChatDistance:ProbePlayerIfUnknown(playerName)
     end
 end
 
--- Ping the player to see if they use this addon. They get registered if they respond, so we can query them later.
--- Ping is throttled by comms transmit for safety
-function KvChatDistance:CachePlayerByName(unitName)
-    KvChatDistance:Debug3("CachePlayerByName", unitName)
-    KvChatDistance:ProbePlayerIfUnknown(unitName)
-end
-
 -- --------------------------------------------------------------------------------------------------------------------
 -- Events
 -- --------------------------------------------------------
@@ -305,7 +314,6 @@ end
 
 function KvChatDistance:Event_UnitChanged(unitID)
     KvChatDistance:Debug2("Event_UnitChanged", unitID)
-    -- Make this call async so we don't get perf spikes on mouseovers
     -- C_Timer.After(0.001, function() KvChatDistance:CacheUnit(unitID) end)
     KvChatDistance:CacheUnit(unitID, nil, "Event_UnitChanged"..(unitID or ""))
 end

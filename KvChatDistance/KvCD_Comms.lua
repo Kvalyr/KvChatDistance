@@ -44,8 +44,11 @@ KvChatDistance.comms_opcodes = {
 
     -- TODO: Handle vararg responses
     ["RU"] = {"..."}, -- Request list of known users
-
 }
+KvChatDistance.comms_opcodes_cooldowns = {
+    ["RV"] = 300,
+}
+
 
 KvChatDistance.comms_throttleCache = {}
 for key in pairs(KvChatDistance.comms_opcodes) do
@@ -118,7 +121,7 @@ function KvChatDistance:CommsRegisterPlayer(newPlayerName, pinged, addonUser, ve
 
     newPlayerName = KvChatDistance.StripRealmFromUnitNameIfSameRealm(newPlayerName)
 
-    KvChatDistance:Debug2("CommsRegisterPlayer", newPlayerName, pinged, addonUser, version, versionApi)
+    KvChatDistance:Debug3("CommsRegisterPlayer", newPlayerName, pinged, addonUser, version, versionApi)
 
     -- TODO: Make this a proper handshake. Compare versions etc.
     -- Consider including broadcast settings in handshake for smarter broadcast/request logic
@@ -262,7 +265,6 @@ function KvChatDistance:CommsVersionReceived(sender, payloadParams, channel)
     KvChatDistance:CommsRegisterPlayer(sender, true, true, payloadParams.version, payloadParams.versionApi)
 end
 
-
 function KvChatDistance:CommsVersionResponse(requester, channel)
     KvChatDistance:CommsSendVersion(requester, "WHISPER")
 end
@@ -403,9 +405,13 @@ function KvChatDistance.CommsUpdateThrottle()
     local curTime = time()
 
     for opCode, opCodeThrottleTable in pairs(KvChatDistance.comms_throttleCache) do
+        local commsThrottleDuration = settings["commsThrottleDuration_" .. (opCode or "")]
+        if not commsThrottleDuration then
+            commsThrottleDuration = KvChatDistance.comms_opcodes_cooldowns[opCode] or settings.commsThrottleDuration
+        end
         for target, lastTransmit in pairs (opCodeThrottleTable) do
             -- If it has been more than commsThrottleDuration seconds since we last called that opcode for this target, clear throttle
-            if curTime - (lastTransmit or 0) >= settings.commsThrottleDuration then
+            if curTime - (lastTransmit or 0) >= commsThrottleDuration then
                 KvChatDistance:Debug4("CommsUpdateThrottle", "EVICTING", opCode, target, curTime, lastTransmit)
                 KvChatDistance.comms_throttleCache[opCode][target] = nil
             end
@@ -455,6 +461,9 @@ function KvChatDistance.CommsBroadcast()
     -- for KvChatDistance.comms_throttleCache[opCode][target]
     local settings = KvChatDistance:GetSettings()
     local curTime = time()
+
+    -- TODO: Party
+    -- TODO: Raid
 
 
     KvChatDistance:CommsBroadCastGuild()
