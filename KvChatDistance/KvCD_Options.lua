@@ -25,6 +25,8 @@ function KvChatDistance:CreateOptionsMenu()
     local NewHeader = KvChatDistance.OptionsNewHeader
     local NewCheckbox = KvChatDistance.OptionsNewCheckbox
     local NewSlider = KvChatDistance.OptionsNewSlider
+    local NewEditBox = KvChatDistance.OptionsNewEditBox
+    local NewColorPicker = KvChatDistance.OptionsNewColorPicker
 
     local debugMode = KvChatDistance:GetSettings().debugMode
     local widgetVerticalSpacing = 8
@@ -105,16 +107,20 @@ function KvChatDistance:CreateOptionsMenu()
     -- local advancedOptionsFrame = NewOptionFrame(optionsFrameL, optionsFrame:GetName().."_Advanced", subFrameWidth, widgetVerticalSpacing * 2, widgetHorizontalSpacing)
     local advancedOptionsParentFrame = optionsFrameR -- advancedOptionsFrame
     local function resetNameplateTicker() KvChatDistance:ResetTicker("nameplates") end
+    advancedOptionsParentFrame.AddWidget(NewHeader(advancedOptionsParentFrame, " "))
     advancedOptionsParentFrame.AddWidget(NewHeader(advancedOptionsParentFrame, "Advanced")) -- TODO: i18n
+    advancedOptionsParentFrame.AddWidget(NewHeader(advancedOptionsParentFrame, " "))
+    advancedOptionsParentFrame.AddWidget(NewSlider(advancedOptionsParentFrame, "unknownColor", 0.0, 1.0, 0.05))
     advancedOptionsParentFrame.AddWidget(NewCheckbox(advancedOptionsParentFrame, "useNameplateTrick", nil, resetNameplateTicker))
+    advancedOptionsParentFrame.AddWidget(NewHeader(advancedOptionsParentFrame, " ", true))
     advancedOptionsParentFrame.AddWidget(NewSlider(advancedOptionsParentFrame, "nameplateTickerInterval", 1, 60, 1, resetNameplateTicker))
 
     -- Comms
     local commsOptionsParentFrame = optionsFrameR -- advancedOptionsFrame
+    commsOptionsParentFrame.AddWidget(NewHeader(commsOptionsParentFrame, " "))
     commsOptionsParentFrame.AddWidget(NewHeader(commsOptionsParentFrame, "Communications")) -- TODO: i18n
     commsOptionsParentFrame.AddWidget(NewCheckbox(commsOptionsParentFrame, "allowComms", nil, nil))
     commsOptionsParentFrame.AddWidget(NewCheckbox(commsOptionsParentFrame, "positionBroadcastEnabled", nil, nil))
-
 
     optionsFrameL:PositionWidgets()
     optionsFrameR:PositionWidgets()
@@ -126,27 +132,59 @@ function KvChatDistance:CreateOptionsMenu()
     highlightOptionsFrame.name = "Highlights"
     highlightOptionsFrame.parent = KvChatDistance.optionsFrame.name
     highlightOptionsFrame.AddWidget(NewHeader(highlightOptionsFrame, "Highlights")) -- TODO: i18n
-    highlightOptionsFrame.AddWidget(NewCheckbox(highlightOptionsFrame, "highlightGuild"))
+
+    highlightOptionsFrame.AddWidget(NewCheckbox(highlightOptionsFrame, "highlightSelf"))
+    highlightOptionsFrame.AddWidget(NewColorPicker(highlightOptionsFrame, "highlightSelfColor"))
+
+    highlightOptionsFrame.AddWidget(NewHeader(highlightOptionsFrame, "Friends", true))
     highlightOptionsFrame.AddWidget(NewCheckbox(highlightOptionsFrame, "highlightFriends"))
+    highlightOptionsFrame.AddWidget(NewColorPicker(highlightOptionsFrame, "highlightFriendsColor"))
+    highlightOptionsFrame.AddWidget(NewCheckbox(highlightOptionsFrame, "highlightFriendsBypassDistance"))
+
+    highlightOptionsFrame.AddWidget(NewHeader(highlightOptionsFrame, "Guild", true))
+    highlightOptionsFrame.AddWidget(NewCheckbox(highlightOptionsFrame, "highlightGuild"))
+    highlightOptionsFrame.AddWidget(NewColorPicker(highlightOptionsFrame, "highlightGuildColor"))
+    highlightOptionsFrame.AddWidget(NewCheckbox(highlightOptionsFrame, "highlightGuildBypassDistance"))
+
+    highlightOptionsFrame.AddWidget(NewHeader(highlightOptionsFrame, "Group", true))
     highlightOptionsFrame.AddWidget(NewCheckbox(highlightOptionsFrame, "highlightGroup"))
+    highlightOptionsFrame.AddWidget(NewColorPicker(highlightOptionsFrame, "highlightGroupColor"))
+    highlightOptionsFrame.AddWidget(NewCheckbox(highlightOptionsFrame, "highlightGroupBypassDistance"))
     highlightOptionsFrame:PositionWidgets()
     InterfaceOptions_AddCategory(highlightOptionsFrame);
 
 
     -- --------------------------------------------------------
     -- Prefixes
-    local prefixOptionsFrame = NewOptionFrame(KvChatDistance.optionsFrame, optionsFrame:GetName().."_Prefixes", subFrameWidth, widgetVerticalSpacing * 2, widgetHorizontalSpacing)
+    local prefixOptionsFrame = NewOptionFrame(KvChatDistance.optionsFrame, optionsFrame:GetName().."_Prefixes", subFrameWidth, widgetVerticalSpacing*1.3, widgetHorizontalSpacing)
+    prefixOptionsFrame:SetScale(0.9)
     prefixOptionsFrame.name = "Prefixes"
     prefixOptionsFrame.parent = KvChatDistance.optionsFrame.name
     prefixOptionsFrame.AddWidget(NewHeader(prefixOptionsFrame, "Prefixes"))
+
+    prefixOptionsFrame.AddWidget(NewColorPicker(prefixOptionsFrame, "prefixColor"))
+
+    prefixOptionsFrame.AddWidget(NewHeader(prefixOptionsFrame, "Friends", true))
     prefixOptionsFrame.AddWidget(NewCheckbox(prefixOptionsFrame, "prefixFriends", nil, nil))
+    prefixOptionsFrame.AddWidget(NewEditBox(prefixOptionsFrame, "prefixFriends_Str", nil, nil))
+    prefixOptionsFrame.AddWidget(NewHeader(prefixOptionsFrame, "Guild", true))
     prefixOptionsFrame.AddWidget(NewCheckbox(prefixOptionsFrame, "prefixGuild", nil, nil))
+    prefixOptionsFrame.AddWidget(NewEditBox(prefixOptionsFrame, "prefixGuild_Str", nil, nil))
+    prefixOptionsFrame.AddWidget(NewHeader(prefixOptionsFrame, "Group", true))
     prefixOptionsFrame.AddWidget(NewCheckbox(prefixOptionsFrame, "prefixGroup", nil, nil))
+    prefixOptionsFrame.AddWidget(NewEditBox(prefixOptionsFrame, "prefixGroup_Str", nil, nil))
+    prefixOptionsFrame.AddWidget(NewHeader(prefixOptionsFrame, "Strangers", true))
     prefixOptionsFrame.AddWidget(NewCheckbox(prefixOptionsFrame, "prefixStrangers", nil, nil))
+    prefixOptionsFrame.AddWidget(NewEditBox(prefixOptionsFrame, "prefixStrangers_Str", nil, nil))
+    prefixOptionsFrame.AddWidget(NewHeader(prefixOptionsFrame, "Target", true))
     prefixOptionsFrame.AddWidget(NewCheckbox(prefixOptionsFrame, "prefixTarget", nil, nil))
+    prefixOptionsFrame.AddWidget(NewEditBox(prefixOptionsFrame, "prefixTarget_Str", nil, nil))
+    prefixOptionsFrame.AddWidget(NewHeader(prefixOptionsFrame, "Focus", true))
     prefixOptionsFrame.AddWidget(NewCheckbox(prefixOptionsFrame, "prefixFocus", nil, nil))
+    prefixOptionsFrame.AddWidget(NewEditBox(prefixOptionsFrame, "prefixFocus_Str", nil, nil))
+    prefixOptionsFrame.AddWidget(NewHeader(prefixOptionsFrame, "NPCs", true))
     prefixOptionsFrame.AddWidget(NewCheckbox(prefixOptionsFrame, "prefixNPCs", nil, nil))
-    prefixOptionsFrame.AddWidget(NewHeader(prefixOptionsFrame, "[ Configurable Prefixes Not Implemented Yet ]"))
+    prefixOptionsFrame.AddWidget(NewEditBox(prefixOptionsFrame, "prefixNPCs_Str", nil, nil))
     prefixOptionsFrame:PositionWidgets()
     InterfaceOptions_AddCategory(prefixOptionsFrame);
 
@@ -166,13 +204,14 @@ function KvChatDistance:CreateOptionsMenu()
         debugOptionsFrame.AddWidget(NewHeader(debugOptionsFrame, "Nameplates"))
         debugOptionsFrame.AddWidget(NewCheckbox(debugOptionsFrame, "hideNameplatesDuringTrick", nil, resetNameplateTicker))
         debugOptionsFrame.AddWidget(NewSlider(debugOptionsFrame, "nameplateTickerHideDelay", 0.001, 3.00, 0.001, resetNameplateTicker))
-        -- debugOptionsFrame.AddWidget(NewCheckbox(debugOptionsFrame, "prefixStrangers", nil, nil))
-        -- debugOptionsFrame.AddWidget(NewCheckbox(debugOptionsFrame, "prefixNPCs", nil, nil))
+        -- debugOptionsFrame.AddWidget(NewCheckbox(debugOptionsFrame, "showLanguage"))
+
+        debugOptionsFrame.AddWidget(NewHeader(debugOptionsFrame, "Distance"))
+        debugOptionsFrame.AddWidget(NewSlider(debugOptionsFrame, "highlightDistanceOffset", 0, 25, 1))
         -- debugOptionsFrame.AddWidget(NewSlider(debugOptionsFrame, "veryNearDistanceThreshold", 0, 30, 1))
         -- debugOptionsFrame.AddWidget(NewSlider(debugOptionsFrame, "nearDistanceThreshold", 5, 60, 1))
         -- debugOptionsFrame.AddWidget(NewSlider(debugOptionsFrame, "midDistanceThreshold", 25, 60, 1))
         -- debugOptionsFrame.AddWidget(NewSlider(debugOptionsFrame, "farDistanceThreshold", 60, 200, 1))
-        -- debugOptionsFrame.AddWidget(NewCheckbox(debugOptionsFrame, "showLanguage"))
 
         debugOptionsFrame.AddWidget(NewHeader(debugOptionsFrame, "Position Cache"))
         debugOptionsFrame.AddWidget(NewSlider(debugOptionsFrame, "positionCacheTickerInterval", 15, 600, 1))
