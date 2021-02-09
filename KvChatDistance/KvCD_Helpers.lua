@@ -135,6 +135,14 @@ function KvChatDistance.StripRealmFromUnitNameIfSameRealm(unitName)
     return unitName
 end
 
+function KvChatDistance.AddRealmToUnitName(unitName)
+    local unitNameOnly, unitRealm = strsplit("-", unitName)
+    if not unitRealm then
+        return unitName .. "-" .. KvChatDistance.constants.playerRealm
+    end
+    return unitName
+end
+
 function KvChatDistance.UnitNameWithRealm(unitID)
     if unitID == "player" then return KvChatDistance.constants.playerNameWithRealm end
     if not UnitIsPlayer(unitID) then
@@ -160,8 +168,19 @@ end
 function KvChatDistance.IsUnitInPlayerGuild(unitID)
     C_GuildInfo.GuildRoster()
     local playerGuild = GetGuildInfo("player")
+    if not playerGuild then return false end
+
     local unitGuild = GetGuildInfo(unitID)
-    return playerGuild ~= nil and playerGuild == unitGuild
+    return playerGuild == unitGuild
+end
+
+function KvChatDistance.IsUnitNameInPlayerGuild(unitName)
+    unitName = KvChatDistance.AddRealmToUnitName(unitName)
+    local guildMembers = KvChatDistance.GetAllGuildMembers()
+    if guildMembers[unitName] then
+        return true
+    end
+    return false
 end
 
 function KvChatDistance.GetAllGuildMembers()
@@ -292,6 +311,14 @@ function KvChatDistance.RGBDecTo255(r,g,b,a)
     return r,g,b,a
 end
 
+function KvChatDistance.RGB255ToDec(r,g,b,a)
+    if r then r = KLib.num.Clamp(r / 255, 0, 1) end
+    if g then g = KLib.num.Clamp(g / 255, 0, 1) end
+    if b then b = KLib.num.Clamp(b / 255, 0, 1) end
+    if a then a = KLib.num.Clamp(a / 255, 0, 1) end
+    return r,g,b,a
+end
+
 -- --------------------------------------------------------------------------------------------------------------------
 -- RGBDecToHex
 -- Expects RGB values in ranges 0.0 to 0.1, converts to 0-255 range then to Hex via KLib.RGBToHex(r, g, b, a)
@@ -309,4 +336,9 @@ function KvChatDistance.RGBDecToHex(r, g, b, a)
     else
         return KvChatDistance.RGBToHex(r, g, b)
     end
+end
+
+function KvChatDistance.HexToDec(hex)
+    local r,g,b,a = KvChatDistance.HexToRGB(hex)
+    return KvChatDistance.RGB255ToDec(r,g,b,a)
 end
