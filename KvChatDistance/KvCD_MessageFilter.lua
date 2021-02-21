@@ -271,13 +271,13 @@ function KvChatDistance.FilterFunc(chatFrame, event, msg, author, language,  ...
         if settings.prefixStrangers and isStranger then
             prefixToApply = settings.prefixStrangers_Str
         end
-    if settings.prefixNPCs and event == "CHAT_MSG_MONSTER_SAY" then
-        prefixToApply = settings.prefixNPCs_Str
-    end
+        if settings.prefixNPCs and event == "CHAT_MSG_MONSTER_SAY" then
+            prefixToApply = settings.prefixNPCs_Str
+        end
 
-    if settings.prefixTarget and unitID == "target" then
-        prefixToApply = settings.prefixTarget_Str
-    end
+        if settings.prefixTarget and unitID == "target" then
+            prefixToApply = settings.prefixTarget_Str
+        end
         if settings.prefixFocus and unitID == "focus" then
             prefixToApply = settings.prefixFocus_Str
         end

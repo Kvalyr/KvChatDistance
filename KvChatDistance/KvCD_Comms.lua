@@ -49,12 +49,10 @@ KvChatDistance.comms_opcodes_cooldowns = {
     ["RV"] = 300,
 }
 
-
 KvChatDistance.comms_throttleCache = {}
 for key in pairs(KvChatDistance.comms_opcodes) do
     KvChatDistance.comms_throttleCache[key] = {}
 end
-
 
 -- --------------------------------------------------------------------------------------------------------------------
 -- Init
@@ -109,7 +107,6 @@ function KvChatDistance:CommsSerializePayload(opCode, data)
     end
     return payload
 end
-
 
 
 -- --------------------------------------------------------------------------------------------------------------------
