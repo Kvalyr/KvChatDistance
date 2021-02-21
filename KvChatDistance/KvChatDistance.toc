@@ -2,7 +2,7 @@
 ## Title: KvChatDistance
 ## Author: Kvalyr
 ## Notes: Darken Chat Messages by Speaker Distance
-## Version: 0.4.0
+## Version: 0.4.1
 ## SavedVariables: KvChatDistance_SV
 ## X-Curse-Project-ID: 440158
 ## X-WoWI-ID: 25882

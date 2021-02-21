@@ -154,13 +154,44 @@ function KvChatDistance:CommsIsPlayerRegistered(playerName)
     return playerData.pinged, playerData.compatible
 end
 
+
+function KvChatDistance:CommsForgetPlayerIgnoreRealm(playerName)
+    local playerNameWithoutRealm = KvChatDistance.StripRealmFromUnitName(playerName)
+    local keyToNil = nil
+    for key in pairs(KvChatDistance.comms_knownPlayers) do
+        local keyWithoutRealm = KvChatDistance.StripRealmFromUnitName(playerName)
+        if playerNameWithoutRealm == keyWithoutRealm then
+            -- KvChatDistance.comms_knownPlayers[playerName] = nil
+            keyToNil = key
+            break
+        end
+    end
+    if keyToNil then
+        KvChatDistance.comms_knownPlayers[keyToNil] = nil
+        KvChatDistance:Debug4("CommsForgetPlayerIgnoreRealm", playerName, keyToNil)
+        return true
+    end
+end
+
 function KvChatDistance:CommsForgetPlayer(playerName)
     if KvChatDistance.comms_knownPlayers[playerName] then
         KvChatDistance:Debug2("Forgetting player:", playerName)
         KvChatDistance.comms_knownPlayers[playerName] = nil
         return true
+    else
+        local playerName = KvChatDistance.AddRealmToUnitName(playerName)
+        if KvChatDistance.comms_knownPlayers[playerName] then
+            KvChatDistance:Debug2("Forgetting player:", playerName)
+            KvChatDistance.comms_knownPlayers[playerName] = nil
+            return true
+        end
     end
-    return false
+    KvChatDistance:Debug4("CommsForgetPlayer false", playerName)
+
+    -- Temporary hack to reduce "No player named X is currently playing" spam caused by mismatch with localized realm names
+    return KvChatDistance:CommsForgetPlayerIgnoreRealm(playerName)
+
+    -- return false
 end
 
 function KvChatDistance:CommsGetRegisteredPlayers()
