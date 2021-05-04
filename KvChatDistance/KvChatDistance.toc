@@ -1,4 +1,4 @@
-## Interface: 90002
+## Interface: 90005
 ## Title: KvChatDistance
 ## Author: Kvalyr
 ## Notes: Darken Chat Messages by Speaker Distance
